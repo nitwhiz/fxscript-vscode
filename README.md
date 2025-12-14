@@ -1,49 +1,79 @@
 # Arena MoveScript (VS Code)
 
-This extension adds basic language support for the Arena MoveScript files (`*.ms`).
+This VS Code extension adds language support for Arena MoveScript files (`*.ms`).
+
+## Configure MoveScript data
+
+Edit `data/movescript.json`. Schema:
+
+```
+{
+  "commands": [
+    { "name": "set" },
+    { "name": "goto" }
+    // Optional: you may also include "detail": "…" per command to show extra help on hover/completion
+    // Optional: you may include "args": [] to explicitly disable argument suggestions for that command
+    // Optional: if you provide typed args, they enable type-aware suggestions (see below)
+  ],
+  "flags": [
+    "moveMissed", "secondTurn", "moveLocked"
+  ],
+  "identifiers": [
+    "attacker", "defender", "statAttack"
+  ],
+  "variables": [
+    "multiHitCounter", "sourceFlags", "targetFlags"
+  ]
+}
+```
+
+Typed args (optional, per command) enable stricter argument suggestions and richer signature help:
+
+```
+{ "name": "goto", "args": [ { "name": "label", "type": "label" } ] }
+{ "name": "setFlag", "args": [ { "name": "dst" }, { "name": "flag", "type": "flag" } ] }
+{ "name": "stat", "args": [ { "name": "id", "type": "identifier" }, { "name": "delta", "type": "number" } ] }
+```
+
+If `args` is omitted for a command, argument completions show “all things”. If `args` is an empty array, argument completions are suppressed for that command.
 
 ## Usage
 
-Open a MoveScript project (see `example/` for a sample). Files with the `.ms` extension will be recognized automatically.
+Open a MoveScript project (see `example/` for a sample). Files with the `.ms` extension are recognized automatically.
 
-Completions will show when you start typing, especially at the start of a line. Constants, labels, and macros are always suggested.
-
-## Extending the commands list
-
-Edit `data/commands.json`. Each entry has:
-
-```
-{ "name": "set", "args": ["identifier", "value"] }
-```
-
-`detail` is optional and should be used sparingly (only for unusual commands). When present, it will show in the completion menu. `args` are used to show simple argument name hints.
+Tips:
+- Suggestions only show when the line is indented.
+- Constants are suggested by type (string/number) when relevant.
+- Labels are suggested where appropriate and can be navigated with F12/Shift+F12.
 
 ## Build / Run
 
-Prerequisites: Node.js LTS.
+Prerequisites: Node.js LTS and pnpm.
 
 ```
 pnpm install
 pnpm watch
 ```
 
-Press F5 in VS Code to launch the extension host with the extension loaded.
+Press F5 in VS Code to launch the Extension Development Host.
 
-To package:
+## Package
+
+Build and create a VSIX with a stable filename:
 
 ```
 pnpm build
-pnpm package
+pnpm dlx @vscode/vsce package -o arena-movescript.vsix
 ```
 
-## Language summary
+You can also run:
 
-- Preprocessor: `@include <file>` (simple textual include)
-- Commands: `set`, `clearFlag`, `moveEnd`, … (list is extendable)
-- Macros: `macro NAME` … `endmacro` (invoked like a command; content is expanded)
-- Strings (double-quoted), floats, ints
-- Labels: `name:`
-- Functions: `call`, `ret`
-- `goto`
-- Comments with `#`
-- `const NAME value`
+```
+pnpm run package
+```
+
+…and install locally with:
+
+```
+pnpm run vscode:install
+```
