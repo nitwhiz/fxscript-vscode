@@ -459,11 +459,17 @@ export function activate(context: vscode.ExtensionContext) {
     )
   );
 
-  // Navigation: Go to Definition and Find References for labels
+  // Navigation: Go to Definition and Find References for labels and consts
   interface LabelDef {
     name: string;
     uri: vscode.Uri;
     range: vscode.Range; // full label token range (name only)
+  }
+
+  interface ConstDef {
+    name: string;
+    uri: vscode.Uri;
+    range: vscode.Range; // const name token range
   }
 
   async function collectAllLabelDefinitions(): Promise<Map<string, LabelDef[]>> {
@@ -496,6 +502,37 @@ export function activate(context: vscode.ExtensionContext) {
     return map;
   }
 
+  const CONST_DEF_RE = /^\s*const\s+([A-Za-z_][A-Za-z0-9_]*)\b/;
+
+  async function collectAllConstDefinitions(): Promise<Map<string, ConstDef[]>> {
+    const map = new Map<string, ConstDef[]>();
+    const uris = await vscode.workspace.findFiles('**/*.ms');
+    for (const uri of uris) {
+      try {
+        const doc = await vscode.workspace.openTextDocument(uri);
+        for (let i = 0; i < doc.lineCount; i++) {
+          const text = doc.lineAt(i).text;
+          const trimmed = text.trimStart();
+          if (trimmed.startsWith('#')) continue;
+          const m = text.match(CONST_DEF_RE);
+          if (m) {
+            const name = m[1];
+            const startIdx = text.indexOf(name);
+            const start = new vscode.Position(i, startIdx);
+            const end = new vscode.Position(i, startIdx + name.length);
+            const entry: ConstDef = { name, uri, range: new vscode.Range(start, end) };
+            const arr = map.get(name) || [];
+            arr.push(entry);
+            map.set(name, arr);
+          }
+        }
+      } catch {
+        // ignore file errors
+      }
+    }
+    return map;
+  }
+
   function isPositionOnLabelDefinition(document: vscode.TextDocument, position: vscode.Position): { name: string } | null {
     const lineText = document.lineAt(position.line).text;
     const m = lineText.match(LABEL_DEF_RE);
@@ -513,26 +550,34 @@ export function activate(context: vscode.ExtensionContext) {
     return range ? document.getText(range) : null;
   }
 
-  // Definition provider: jump from a label usage to the (last) label definition
+  // Definition provider: jump from a usage to the (last) definition for consts and labels
   context.subscriptions.push(
     vscode.languages.registerDefinitionProvider('movescript', {
       async provideDefinition(document, position) {
         const word = getWordAtPosition(document, position);
         if (!word) return;
 
-        // If this is the label definition itself, still resolve to the last definition of this label
-        const defsMap = await collectAllLabelDefinitions();
-        const defs = defsMap.get(word);
-        if (!defs || defs.length === 0) return;
+        // Prefer const definitions if the name matches a const; else fall back to labels
+        const constMap = await collectAllConstDefinitions();
+        const constDefs = constMap.get(word);
+        if (constDefs && constDefs.length > 0) {
+          const last = constDefs[constDefs.length - 1];
+          return new vscode.Location(last.uri, last.range);
+        }
 
-        // choose the last occurrence (as requested)
-        const last = defs[defs.length - 1];
-        return new vscode.Location(last.uri, last.range);
+        const labelMap = await collectAllLabelDefinitions();
+        const labelDefs = labelMap.get(word);
+        if (labelDefs && labelDefs.length > 0) {
+          const last = labelDefs[labelDefs.length - 1];
+          return new vscode.Location(last.uri, last.range);
+        }
+
+        return;
       }
     })
   );
 
-  // References provider: from a label definition (or any label word), list all usages across workspace
+  // References provider: from a definition (label/const) or any matching word, list all usages across workspace
   context.subscriptions.push(
     vscode.languages.registerReferenceProvider('movescript', {
       async provideReferences(document, position, context) {
@@ -553,8 +598,10 @@ export function activate(context: vscode.ExtensionContext) {
                 return hash >= 0 ? full.slice(0, hash) : full;
               })();
 
-              // Skip pure label definition lines as usages; we only want usages unless includeDeclaration is true
-              const isDefLine = LABEL_DEF_RE.test(noComment);
+              // Skip pure definition lines (label or const) as usages unless includeDeclaration is true
+              const isLabelDef = LABEL_DEF_RE.test(noComment);
+              const isConstDef = CONST_DEF_RE.test(noComment);
+              const isDefLine = isLabelDef || isConstDef;
 
               let match: RegExpExecArray | null;
               IDENT_RE.lastIndex = 0; // ensure clean state for shared regex
