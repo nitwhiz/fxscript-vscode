@@ -1,0 +1,7 @@
+out/test/**
+src/**
+**/*.map
+**/*.ts
+example/**
+node_modules/**
+!node_modules/vscode-languageclient/**

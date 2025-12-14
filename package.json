@@ -1,0 +1,49 @@
+{
+  "name": "arena-movescript",
+  "displayName": "Arena MoveScript",
+  "description": "Syntax highlighting and IntelliSense for Arena MoveScript (*.ms).",
+  "version": "0.1.0",
+  "publisher": "nitwhiz",
+  "repository": "https://github.com/nitwhiz/arena-movescript-vscode",
+  "engines": {
+    "vscode": "^1.107.0"
+  },
+  "categories": [
+    "Programming Languages"
+  ],
+  "contributes": {
+    "languages": [
+      {
+        "id": "movescript",
+        "aliases": ["MoveScript", "movescript"],
+        "extensions": [".ms"],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "movescript",
+        "scopeName": "source.movescript",
+        "path": "./syntaxes/movescript.tmLanguage.json"
+      }
+    ]
+  },
+  "activationEvents": [
+    "onLanguage:movescript"
+  ],
+  "main": "./out/extension.js",
+  "scripts": {
+    "vscode:prepublish": "tsc -p ./",
+    "build": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "package": "vsce package -o arena-movescript.vsix",
+    "vscode:install": "code --install-extension arena-movescript.vsix"
+  },
+  "devDependencies": {
+    "@types/node": "^24.10.4",
+    "@types/vscode": "^1.107.0",
+    "typescript": "^5.4.0",
+    "@vscode/vsce": "^3.7.1"
+  },
+  "dependencies": {}
+}

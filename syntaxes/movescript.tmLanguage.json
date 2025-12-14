@@ -1,0 +1,115 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "Arena MoveScript",
+  "scopeName": "source.movescript",
+  "patterns": [
+    { "include": "#comments" },
+    { "include": "#directives" },
+    { "include": "#labels" },
+    { "include": "#macro-block" },
+    { "include": "#keywords" },
+    { "include": "#strings" },
+    { "include": "#numbers" },
+    { "include": "#commands" }
+  ],
+  "repository": {
+    "comments": {
+      "patterns": [
+        {
+          "name": "comment.line.number-sign.movescript",
+          "match": "#.*$"
+        }
+      ]
+    },
+    "directives": {
+      "patterns": [
+        {
+          "name": "keyword.control.directive.movescript",
+          "match": "(^|\\s)(@include)\\b"
+        }
+      ]
+    },
+    "labels": {
+      "patterns": [
+        {
+          "name": "meta.label.movescript",
+          "match": "^(\\s*)([A-Za-z_][A-Za-z0-9_]*)(\\s*:)",
+          "captures": {
+            "2": { "name": "entity.name.function.label.movescript" },
+            "3": { "name": "punctuation.separator.label.movescript" }
+          }
+        }
+      ]
+    },
+    "macro-block": {
+      "patterns": [
+        {
+          "begin": "^(\\s*)(macro)\\b\\s+([A-Za-z_][A-Za-z0-9_]*)",
+          "beginCaptures": {
+            "2": { "name": "storage.type.macro.movescript" },
+            "3": { "name": "entity.name.function.macro.movescript" }
+          },
+          "end": "^(\\s*)(endmacro)\\b",
+          "endCaptures": {
+            "2": { "name": "storage.type.macro.movescript" }
+          },
+          "name": "meta.macro.movescript",
+          "patterns": [
+            { "include": "#comments" },
+            { "include": "#keywords" },
+            { "include": "#commands" },
+            { "include": "#strings" },
+            { "include": "#numbers" }
+          ]
+        }
+      ]
+    },
+    "keywords": {
+      "patterns": [
+        {
+          "name": "keyword.control.flow.movescript",
+          "match": "(^|\\s)(call|ret|goto)\\b"
+        },
+        {
+          "name": "storage.type.const.movescript",
+          "match": "(^|\\s)(const)\\b"
+        }
+      ]
+    },
+    "strings": {
+      "patterns": [
+        {
+          "name": "string.quoted.double.movescript",
+          "begin": "\"",
+          "end": "\"",
+          "patterns": [
+            {
+              "name": "constant.character.escape.movescript",
+              "match": "\\."
+            },
+            {
+              "name": "variable.interpolation.movescript",
+              "match": "\\{[A-Za-z_][A-Za-z0-9_]*\\}"
+            }
+          ]
+        }
+      ]
+    },
+    "numbers": {
+      "patterns": [
+        {
+          "name": "constant.numeric.movescript",
+          "match": "(?<![A-Za-z_\\\"])(?:[+-]?)(?:\\\\d+)(?:\\\\.\\\\d+)?\\b"
+        }
+      ]
+    },
+    "commands": {
+      "patterns": [
+        {
+          "name": "support.function.command.movescript",
+          "match": "^(\\s*)(?:(?!macro|endmacro|const|@include|call|ret|goto)[A-Za-z_][A-Za-z0-9_]*)\\b"
+        }
+      ]
+    }
+  }
+}
