@@ -32,6 +32,7 @@ function createCompletionProvider(context: vscode.ExtensionContext) {
   const flagsFromConfig = ms.flags;
   const identifiersFromConfig = ms.identifiers;
   const variablesFromConfig = ms.variables || [];
+  const tagsFromConfig = (ms.string_tags && ms.string_tags.length > 0 ? ms.string_tags : (ms.tags || []));
 
   let cache: { macros: string[]; consts: { name: string; type: ConstType }[]; labels: string[] } = { macros: [], consts: [], labels: [] };
 
@@ -68,6 +69,52 @@ function createCompletionProvider(context: vscode.ExtensionContext) {
       const afterFirstToken = firstToken ? trimmed.substring(firstToken.length).trimLeft() : '';
 
       const items: vscode.CompletionItem[] = [];
+
+      // If inside a string and currently within a {tag} expression, suggest tags
+      const isInsideStringTagContext = (function suggestTagsInsideBraces() {
+        const textToCursor = line;
+        // Determine if inside a string by scanning quotes with escape support
+        let inString = false;
+        let escaped = false;
+        for (let i = 0; i < textToCursor.length; i++) {
+          const ch = textToCursor[i];
+          if (ch === '"' && !escaped) inString = !inString;
+          escaped = ch === '\\' && !escaped;
+          if (ch !== '\\') escaped = false;
+        }
+        if (!inString) return false;
+        // Find the position of the last opening quote
+        let lastQuote = -1;
+        for (let i = textToCursor.length - 1, esc = false; i >= 0; i--) {
+          const ch = textToCursor[i];
+          if (ch === '"' && !esc) { lastQuote = i; break; }
+          esc = ch === '\\' && !esc;
+          if (ch !== '\\') esc = false;
+        }
+        const afterQuote = lastQuote >= 0 ? textToCursor.slice(lastQuote + 1) : textToCursor;
+        const openBraceIdx = afterQuote.lastIndexOf('{');
+        if (openBraceIdx < 0) return false;
+        const afterOpen = afterQuote.slice(openBraceIdx + 1);
+        // If there's a closing brace before cursor, we're not inside an open tag
+        if (afterOpen.includes('}')) return false;
+        const partial = afterOpen; // partial tag name
+        for (const t of tagsFromConfig) {
+          if (typeof t !== 'string') continue;
+          if (partial.length === 0 || t.startsWith(partial)) {
+            const it = new vscode.CompletionItem(t, vscode.CompletionItemKind.EnumMember);
+            it.detail = 'tag';
+            // Replace partial inside braces
+            const replaceStartCol = position.character - partial.length;
+            it.range = new vscode.Range(new vscode.Position(position.line, replaceStartCol), position);
+            items.push(it);
+          }
+        }
+        return items.length > 0;
+      })();
+      // If inside a string tag context, only suggest string tags (and nothing else)
+      if (isInsideStringTagContext) {
+        return new vscode.CompletionList(items, false);
+      }
 
       // Previously we only suggested on indented lines. This was too strict.
       // Now we allow completions at any indentation level. Certain keywords
@@ -291,7 +338,7 @@ function createCompletionProvider(context: vscode.ExtensionContext) {
 export function activate(context: vscode.ExtensionContext) {
   const provider = createCompletionProvider(context);
   context.subscriptions.push(
-    vscode.languages.registerCompletionItemProvider({ language: 'movescript', scheme: 'file' }, provider, ' ', '\"', '@')
+    vscode.languages.registerCompletionItemProvider({ language: 'movescript', scheme: 'file' }, provider, ' ', '\"', '@', '{')
   );
 
   // Hover: show signature and optional detail for known commands from commands.json
@@ -829,6 +876,7 @@ export function activate(context: vscode.ExtensionContext) {
       fixedSpecMap.set(c.name, c);
     }
   }
+  const knownTags = new Set<string>((diagMs.string_tags && diagMs.string_tags.length > 0 ? diagMs.string_tags : (diagMs.tags || [])).filter(t => typeof t === 'string'));
 
   const diagnostics = vscode.languages.createDiagnosticCollection('movescript');
   context.subscriptions.push(diagnostics);
@@ -897,6 +945,24 @@ export function activate(context: vscode.ExtensionContext) {
       if (isLabelDefinition(full)) continue;
 
       const tokens = tokenize(full);
+      // Validate tags inside string tokens: {tag}
+      for (const tok of tokens) {
+        if (tok.text.startsWith('"')) {
+          const inner = tok.text.slice(1, tok.text.endsWith('"') ? -1 : undefined);
+          const re = /\{([A-Za-z_][A-Za-z0-9_]*)\}/g;
+          let m: RegExpExecArray | null;
+          while ((m = re.exec(inner)) !== null) {
+            const tag = m[1];
+            if (!knownTags.has(tag)) {
+              const start = tok.start + 1 + (m.index || 0) + 1; // position of tag name start within line
+              const end = start + tag.length;
+              const range = new vscode.Range(new vscode.Position(lineNum, start - 1), new vscode.Position(lineNum, end + 1)); // include braces
+              const d = new vscode.Diagnostic(range, `Unknown tag {${tag}}`, vscode.DiagnosticSeverity.Error);
+              diags.push(d);
+            }
+          }
+        }
+      }
       if (tokens.length === 0) continue;
 
       // First token is candidate command name (allow keywords like call/goto/ret as they exist in config)
@@ -1008,6 +1074,8 @@ interface MovescriptConfig {
   flags: string[];
   identifiers: string[];
   variables: string[];
+  string_tags?: string[]; // new preferred name
+  tags?: string[]; // backward compatibility
 }
 
 function readMovescript(context: vscode.ExtensionContext): MovescriptConfig {
@@ -1043,9 +1111,14 @@ function readMovescript(context: vscode.ExtensionContext): MovescriptConfig {
     const flags: string[] = Array.isArray(parsed?.flags) ? parsed.flags.filter((x: any) => typeof x === 'string') : [];
     const identifiers: string[] = Array.isArray(parsed?.identifiers) ? parsed.identifiers.filter((x: any) => typeof x === 'string') : [];
     const variables: string[] = Array.isArray(parsed?.variables) ? parsed.variables.filter((x: any) => typeof x === 'string') : [];
-    return { commands, flags, identifiers, variables };
+    const string_tags: string[] = Array.isArray(parsed?.string_tags)
+      ? parsed.string_tags.filter((x: any) => typeof x === 'string')
+      : [];
+    const legacyTags: string[] = Array.isArray(parsed?.tags) ? parsed.tags.filter((x: any) => typeof x === 'string') : [];
+    const mergedTags = (string_tags.length > 0 ? string_tags : legacyTags);
+    return { commands, flags, identifiers, variables, string_tags: mergedTags, tags: legacyTags } as MovescriptConfig;
   } catch {
-    return { commands: [], flags: [], identifiers: [], variables: [] };
+    return { commands: [], flags: [], identifiers: [], variables: [], string_tags: [] } as MovescriptConfig;
   }
 }
 

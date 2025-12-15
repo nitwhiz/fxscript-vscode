@@ -37,7 +37,7 @@ type RuntimeEnvironment interface {
 	CmdSetSource(sourceRef Identifier)
 	CmdSetTarget(targetRef Identifier)
 	CmdMoveEnd()
-	CmdPrint(str string, arg Variable)
+	CmdPrint(str string)
 	CmdSetSecondaryEffect(fnPtr int, chance int)
 	CmdSecondaryEffect()
 	CmdJumpIfMove(identifier string, jumpPtr int) (pc int, jump bool)

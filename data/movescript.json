@@ -270,11 +270,6 @@
         {
           "name": "str",
           "type": "string"
-        },
-        {
-          "name": "arg",
-          "type": "variable",
-          "optional": true
         }
       ]
     },
@@ -397,5 +392,21 @@
     "attackerConfusionTurns",
     "attackerDisabledMoveTurns",
     "attackerWrappedTurns"
+  ],
+  "string_tags": [
+    "affectedStat",
+    "side",
+    "attackerSide",
+    "defenderSide",
+    "sourceSide",
+    "targetSide",
+    "attacker",
+    "defender",
+    "source",
+    "target",
+    "currentMove",
+    "targetDisabledMove",
+    "targetWrappedByMove",
+    "multiHitSuccessCounter"
   ]
 }

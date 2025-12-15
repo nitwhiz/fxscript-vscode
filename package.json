@@ -36,7 +36,7 @@
     "vscode:prepublish": "tsc -p ./",
     "build": "tsc -p ./",
     "watch": "tsc -watch -p ./",
-    "generate-commands": "node scripts/generate-movescript-json.js",
+    "generate": "node scripts/generate-movescript-json.js",
     "package": "vsce package -o arena-movescript.vsix",
     "vscode:install:mac": "'/Applications/Visual Studio Code.app/Contents/Resources/app/bin/code' --install-extension arena-movescript.vsix",
     "vscode:install": "code --install-extension arena-movescript.vsix"
