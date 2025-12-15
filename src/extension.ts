@@ -69,10 +69,9 @@ function createCompletionProvider(context: vscode.ExtensionContext) {
 
       const items: vscode.CompletionItem[] = [];
 
-      // New rule: Only suggest when indented (at least 1 leading space)
-      if (!isIndented) {
-        return new vscode.CompletionList([], false);
-      }
+      // Previously we only suggested on indented lines. This was too strict.
+      // Now we allow completions at any indentation level. Certain keywords
+      // (macro/const/@include) will still only be suggested at line start.
 
       // Determine if we are completing arguments for a known command on this line
       if (firstToken) {
@@ -199,7 +198,7 @@ function createCompletionProvider(context: vscode.ExtensionContext) {
         }
       }
 
-      // Fallback: macros, keyword, commands
+      // Fallback: macros, keywords, commands
       for (const m of cache.macros) {
         const it = new vscode.CompletionItem(m, vscode.CompletionItemKind.Snippet);
         it.detail = 'macro';
@@ -207,10 +206,69 @@ function createCompletionProvider(context: vscode.ExtensionContext) {
         items.push(it);
       }
 
-      const macroKw = new vscode.CompletionItem('macro', vscode.CompletionItemKind.Keyword);
-      macroKw.detail = 'define a macro';
-      macroKw.insertText = 'macro ';
-      items.push(macroKw);
+      // Suggest macro/const/@include keywords only at line start (unindented)
+      if (atLineStart) {
+        // Compute current token (non-whitespace run at the end of the trimmed line)
+        const tokenMatch = trimmed.match(/(\S+)$/);
+        const currentToken = tokenMatch?.[1] ?? '';
+        const leadingWs = line.length - trimmed.length;
+        const tokenStartInTrimmed = (() => {
+          if (!tokenMatch) return trimmed.length; // cursor at whitespace
+          return trimmed.length - currentToken.length;
+        })();
+        const tokenStartCol = leadingWs + tokenStartInTrimmed;
+
+        const macroKw = new vscode.CompletionItem('macro', vscode.CompletionItemKind.Keyword);
+        macroKw.detail = 'define a macro';
+        macroKw.insertText = 'macro ';
+        items.push(macroKw);
+
+        const constKw = new vscode.CompletionItem('const', vscode.CompletionItemKind.Keyword);
+        constKw.detail = 'define a constant';
+        constKw.insertText = 'const ';
+        items.push(constKw);
+
+        const includeKw = new vscode.CompletionItem('@include', vscode.CompletionItemKind.Keyword);
+        includeKw.detail = 'include another file';
+        includeKw.insertText = '@include ';
+        // Keep only @include at the top when user starts typing '@inc…'
+        includeKw.sortText = '\u0000';
+        // Allow typing with or without '@' to keep the suggestion
+        includeKw.filterText = currentToken.startsWith('@') ? currentToken : 'include';
+        // Replace the currently typed token (e.g., '@in' or '@incl') with '@include '
+        includeKw.range = new vscode.Range(new vscode.Position(position.line, tokenStartCol), position);
+        includeKw.preselect = true;
+        // Also trigger completion after typing '@'
+        includeKw.commitCharacters = [' '];
+        items.push(includeKw);
+
+        // If typing an @-directive, keep the list focused on directives only
+        if (currentToken.startsWith('@')) {
+          return new vscode.CompletionList(items, true);
+        }
+
+        // Contextual suggestion for endmacro: offer only if a macro block is open
+        // (i.e., there is a preceding 'macro' without a matching 'endmacro' up to current line)
+        const textUpToHere = document.getText(new vscode.Range(new vscode.Position(0, 0), position));
+        const openMacros = (() => {
+          let count = 0;
+          const lines = textUpToHere.split(/\r?\n/);
+          for (const ln of lines) {
+            const code = (() => { const idx = ln.indexOf('#'); return idx >= 0 ? ln.slice(0, idx) : ln; })();
+            if (/^\s*macro\b/.test(code)) count++;
+            if (/^\s*endmacro\b/.test(code)) count = Math.max(0, count - 1);
+          }
+          return count;
+        })();
+        // Only suggest endmacro if a macro is currently open and the current
+        // line is not already an endmacro line
+        if (openMacros > 0 && !/^\s*endmacro\b/.test(trimmed)) {
+          const endmacroKw = new vscode.CompletionItem('endmacro', vscode.CompletionItemKind.Keyword);
+          endmacroKw.detail = 'end macro block';
+          endmacroKw.insertText = 'endmacro';
+          items.push(endmacroKw);
+        }
+      }
 
       for (const cmd of commands) {
         const it = new vscode.CompletionItem(cmd.name, vscode.CompletionItemKind.Function);
@@ -233,7 +291,7 @@ function createCompletionProvider(context: vscode.ExtensionContext) {
 export function activate(context: vscode.ExtensionContext) {
   const provider = createCompletionProvider(context);
   context.subscriptions.push(
-    vscode.languages.registerCompletionItemProvider({ language: 'movescript', scheme: 'file' }, provider, ' ', '\"')
+    vscode.languages.registerCompletionItemProvider({ language: 'movescript', scheme: 'file' }, provider, ' ', '\"', '@')
   );
 
   // Hover: show signature and optional detail for known commands from commands.json
@@ -760,6 +818,165 @@ export function activate(context: vscode.ExtensionContext) {
       }
     })
   );
+
+  // Diagnostics: syntax checking for missing/extra arguments on commands with fixed args
+  const diagMs = readMovescript(context);
+  // Map of command name -> CommandSpec (only those with fixed args defined)
+  const fixedSpecMap = new Map<string, CommandSpec>();
+  for (const c of diagMs.commands || []) {
+    // Only include commands where args is defined (fixed-arity). If args is undefined, skip diagnostics.
+    if (Object.prototype.hasOwnProperty.call(c, 'args')) {
+      fixedSpecMap.set(c.name, c);
+    }
+  }
+
+  const diagnostics = vscode.languages.createDiagnosticCollection('movescript');
+  context.subscriptions.push(diagnostics);
+
+  function stripCommentRespectingStrings(line: string): string {
+    let inString = false;
+    let result = '';
+    for (let i = 0; i < line.length; i++) {
+      const ch = line[i];
+      const prev = i > 0 ? line[i - 1] : '';
+      if (!inString && ch === '#') {
+        break; // drop the rest
+      }
+      if (ch === '"' && prev !== '\\') {
+        inString = !inString;
+      }
+      result += ch;
+    }
+    return result;
+  }
+
+  type Token = { text: string; start: number; end: number };
+  function tokenize(line: string): Token[] {
+    const code = stripCommentRespectingStrings(line);
+    const tokens: Token[] = [];
+    let i = 0;
+    const n = code.length;
+    while (i < n) {
+      // skip whitespace
+      while (i < n && (code[i] === ' ' || code[i] === '\t')) i++;
+      if (i >= n) break;
+      const start = i;
+      if (code[i] === '"') {
+        // quoted string token
+        i++; // consume opening quote
+        let escaped = false;
+        while (i < n) {
+          const ch = code[i];
+          if (!escaped && ch === '"') { i++; break; }
+          escaped = !escaped && ch === '\\';
+          i++;
+        }
+        tokens.push({ text: code.slice(start, i), start, end: i });
+      } else {
+        // regular token until whitespace
+        while (i < n && code[i] !== ' ' && code[i] !== '\t') i++;
+        tokens.push({ text: code.slice(start, i), start, end: i });
+      }
+    }
+    return tokens;
+  }
+
+  function isLabelDefinition(line: string): boolean {
+    return LABEL_DEF_RE.test(line);
+  }
+
+  function validateDocument(document: vscode.TextDocument) {
+    if (document.languageId !== 'movescript') return;
+    const diags: vscode.Diagnostic[] = [];
+    for (let lineNum = 0; lineNum < document.lineCount; lineNum++) {
+      const full = document.lineAt(lineNum).text;
+      // ignore pure comment lines
+      const trimmedStart = full.trimStart();
+      if (!trimmedStart) continue;
+      if (trimmedStart.startsWith('#')) continue;
+      if (isLabelDefinition(full)) continue;
+
+      const tokens = tokenize(full);
+      if (tokens.length === 0) continue;
+
+      // First token is candidate command name (allow keywords like call/goto/ret as they exist in config)
+      const cmdToken = tokens[0];
+      // Extract bare word for command (strip quotes if someone wrote a string at start; then it won't match)
+      const cmdName = cmdToken.text.startsWith('"') ? '' : cmdToken.text;
+      if (!cmdName) continue;
+
+      const spec = fixedSpecMap.get(cmdName);
+      if (!spec) continue; // not a fixed-arity command
+
+      const argsArray: ArgSpec[] = Array.isArray(spec.args) ? spec.args : [];
+      const expectedMax = argsArray.length;
+      const expectedMin = argsArray.reduce((acc, a) => acc + (a && a.optional === true ? 0 : 1), 0);
+      const provided = Math.max(0, tokens.length - 1);
+
+      if (expectedMax === 0) {
+        // No args expected; any provided are extras
+        if (provided > 0) {
+          const extraStartTok = tokens[1];
+          const extraEndTok = tokens[tokens.length - 1];
+          const range = new vscode.Range(
+            new vscode.Position(lineNum, extraStartTok.start),
+            new vscode.Position(lineNum, extraEndTok.end)
+          );
+          const d = new vscode.Diagnostic(range, `${cmdName} takes no arguments (${provided} provided)`, vscode.DiagnosticSeverity.Error);
+          diags.push(d);
+        }
+        continue;
+      }
+
+      if (provided < expectedMin) {
+        // Missing arguments: underline the command token
+        const range = new vscode.Range(
+          new vscode.Position(lineNum, cmdToken.start),
+          new vscode.Position(lineNum, cmdToken.end)
+        );
+        const missing = expectedMin - provided;
+        const d = new vscode.Diagnostic(range, `Missing ${missing} argument${missing === 1 ? '' : 's'} for ${cmdName} (expected at least ${expectedMin}, got ${provided})`, vscode.DiagnosticSeverity.Error);
+        diags.push(d);
+      } else if (provided > expectedMax) {
+        // Extra arguments: underline the extra part
+        const extraStartTok = tokens[1 + expectedMax];
+        const extraEndTok = tokens[tokens.length - 1];
+        if (extraStartTok && extraEndTok) {
+          const range = new vscode.Range(
+            new vscode.Position(lineNum, extraStartTok.start),
+            new vscode.Position(lineNum, extraEndTok.end)
+          );
+          const extra = provided - expectedMax;
+          const d = new vscode.Diagnostic(range, `Too many arguments for ${cmdName} (expected at most ${expectedMax}, got ${provided}; ${extra} extra)`, vscode.DiagnosticSeverity.Error);
+          diags.push(d);
+        }
+      }
+    }
+    diagnostics.set(document.uri, diags);
+  }
+
+  // Validate currently open documents
+  for (const doc of vscode.workspace.textDocuments) {
+    if (doc.languageId === 'movescript') validateDocument(doc);
+  }
+
+  // Re-validate on open/save/change
+  context.subscriptions.push(
+    vscode.workspace.onDidOpenTextDocument(doc => {
+      if (doc.languageId === 'movescript') validateDocument(doc);
+    })
+  );
+  context.subscriptions.push(
+    vscode.workspace.onDidSaveTextDocument(doc => {
+      if (doc.languageId === 'movescript') validateDocument(doc);
+    })
+  );
+  context.subscriptions.push(
+    vscode.workspace.onDidChangeTextDocument(evt => {
+      const doc = evt.document;
+      if (doc.languageId === 'movescript') validateDocument(doc);
+    })
+  );
 }
 
 export function deactivate() {}
@@ -777,6 +994,7 @@ type ArgType = 'label' | 'string' | 'number' | 'flag' | 'identifier' | 'variable
 interface ArgSpec {
   name: string;
   type?: ArgType;
+  optional?: boolean; // if omitted, treated as false
 }
 
 interface CommandSpec {
@@ -809,7 +1027,8 @@ function readMovescript(context: vscode.ExtensionContext): MovescriptConfig {
                 if (a && typeof a === 'object') {
                   const name = typeof a.name === 'string' ? a.name : String(a.name ?? 'arg');
                   const type: ArgType | undefined = ['label', 'string', 'number', 'flag', 'identifier', 'variable'].includes(a.type) ? (a.type as ArgType) : undefined;
-                  return { name, type } as ArgSpec;
+                  const optional: boolean | undefined = typeof a.optional === 'boolean' ? a.optional : undefined;
+                  return { name, type, optional } as ArgSpec;
                 } else {
                   return { name: String(a) } as ArgSpec;
                 }

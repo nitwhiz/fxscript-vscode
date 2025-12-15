@@ -79,29 +79,40 @@ function collectMethodMetadata(interfaceBody) {
       const detail = pendingComments.join('\n').trim();
       pendingComments = [];
 
-      let args = [];
+      const args = [];
       if (paramsRaw.length > 0) {
-        // Split by commas not inside anything (simple: no generics in Go types here)
+        // Split by commas at top level. Grouped params like "from, to Variable" become
+        // ["from", "to Variable"]. We buffer names without a type and backfill when we see a type.
         const parts = paramsRaw.split(/\s*,\s*/);
-        for (const p of parts) {
-          // Two Go parameter declaration styles appear:
-          //  - name type  (e.g., variable Variable)
-          //  - multiple names share a type (rare in interfaces; ignore for now)
-          //  - single name with type
-          const m = p.match(/^([A-Za-z_][A-Za-z0-9_]*)\s+(.+)$/);
-          if (m) {
-            const paramName = m[1];
-            const goType = m[2].trim();
-            // If it looks like multiple names with one type: a, b Variable
-            const multi = paramName.includes(' ');
-            if (!multi) {
-              const mapped = mapGoTypeToArg(paramName, goType);
-              if (mapped) args.push({ name: paramName, type: mapped });
+        let pendingNames = [];
+        for (const part of parts) {
+          const typed = part.match(/^([A-Za-z_][A-Za-z0-9_]*)\s+(.+)$/);
+          if (typed) {
+            const paramName = typed[1];
+            const goType = typed[2].trim();
+            const mapped = mapGoTypeToArg(paramName, goType);
+            if (mapped) {
+              // Apply this type to all pending names first
+              for (const n of pendingNames) {
+                const m2 = mapGoTypeToArg(n, goType);
+                if (m2) args.push({ name: n, type: m2 });
+              }
+              pendingNames = [];
+              // Then add the current param with the same type
+              args.push({ name: paramName, type: mapped });
+            } else {
+              // Unknown type: clear pending and skip
+              pendingNames = [];
             }
           } else {
-            // If no type given (shouldn't happen here), skip
+            // No type in this segment; this should be a bare parameter name
+            const nameOnly = part.match(/^([A-Za-z_][A-Za-z0-9_]*)$/);
+            if (nameOnly) {
+              pendingNames.push(nameOnly[1]);
+            }
           }
         }
+        // If any names remain without a discovered type, we drop them (no suggestions)
       }
 
       const meta = { args };
@@ -169,10 +180,29 @@ function main() {
   const identifiers = extractMapKeys(parserSrc, 'identifiers');
   const variables = extractMapKeys(parserSrc, 'variables');
 
-  // Build commands array: { name, detail? }
+  // Build commands array: { name, detail?, args? }
   // Special cases: ignore synthetic entries used differently in runtime
   // - "count" (CmdCount)
   // - "none"  (CmdNone)
+  // To preserve user-specified fields like `optional` on args, read existing output (if any)
+  let existing = {};
+  try {
+    const outExisting = path.resolve(process.cwd(), OUTPUT_DIR_REL, OUTPUT_FILENAME);
+    if (fs.existsSync(outExisting)) {
+      const prev = JSON.parse(fs.readFileSync(outExisting, 'utf8'));
+      if (Array.isArray(prev?.commands)) {
+        for (const c of prev.commands) {
+          if (!c || typeof c.name !== 'string') continue;
+          if (Array.isArray(c.args)) {
+            existing[c.name] = c.args;
+          }
+        }
+      }
+    }
+  } catch {
+    existing = {};
+  }
+
   const commands = cmdEntries
     .filter(({ key }) => key !== 'count' && key !== 'none')
     .map(({ key, value }) => {
@@ -180,7 +210,21 @@ function main() {
       const methodName = value.replace(/\s+/g, '');
       const meta = methodMeta.get(methodName) || {};
       const detail = meta.detail || '';
-      const args = Array.isArray(meta.args) ? meta.args : [];
+      // Start from generated args, then merge back any existing user-set properties (like optional)
+      const genArgs = Array.isArray(meta.args) ? meta.args : [];
+      const prevArgs = existing[key];
+      const args = genArgs.map((ga, idx) => {
+        const prev = Array.isArray(prevArgs) ? prevArgs[idx] : undefined;
+        if (prev && typeof prev === 'object') {
+          const out = { ...ga };
+          // Preserve boolean optional exactly as specified if present
+          if (Object.prototype.hasOwnProperty.call(prev, 'optional')) {
+            out.optional = !!prev.optional;
+          }
+          return out;
+        }
+        return ga;
+      });
       const obj = { name: key };
       // Always include args (explicitly empty array when no args)
       obj.args = args;

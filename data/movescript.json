@@ -35,6 +35,10 @@
       "name": "copy",
       "args": [
         {
+          "name": "from",
+          "type": "variable"
+        },
+        {
           "name": "to",
           "type": "variable"
         }
@@ -149,7 +153,8 @@
       "args": [
         {
           "name": "power",
-          "type": "number"
+          "type": "number",
+          "optional": true
         }
       ]
     },
@@ -166,7 +171,8 @@
       "args": [
         {
           "name": "jumpPtr",
-          "type": "label"
+          "type": "label",
+          "optional": true
         }
       ]
     },
@@ -175,7 +181,8 @@
       "args": [
         {
           "name": "jumpPtr",
-          "type": "label"
+          "type": "label",
+          "optional": true
         }
       ]
     },
@@ -266,7 +273,8 @@
         },
         {
           "name": "arg",
-          "type": "variable"
+          "type": "variable",
+          "optional": true
         }
       ]
     },

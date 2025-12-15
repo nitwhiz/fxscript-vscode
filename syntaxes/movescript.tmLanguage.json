@@ -71,6 +71,10 @@
           "match": "(^|\\s)(call|ret|goto)\\b"
         },
         {
+          "name": "storage.type.macro.movescript",
+          "match": "(^|\\s)(macro|endmacro)\\b"
+        },
+        {
           "name": "storage.type.const.movescript",
           "match": "(^|\\s)(const)\\b"
         }
