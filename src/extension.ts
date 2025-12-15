@@ -555,6 +555,47 @@ export function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(
     vscode.languages.registerDefinitionProvider('movescript', {
       async provideDefinition(document, position) {
+        // First, handle @include navigation when the cursor is on the included path
+        {
+          const lineText = document.lineAt(position.line).text;
+          // Find the @include keyword on this line (ignore lines that are comments entirely)
+          const hashIdx = lineText.indexOf('#');
+          const codePart = hashIdx >= 0 ? lineText.slice(0, hashIdx) : lineText;
+          const includeIdx = codePart.indexOf('@include');
+          if (includeIdx >= 0) {
+            // Compute the start of the path token: after "@include" and at least one space
+            const after = codePart.slice(includeIdx + '@include'.length);
+            const wsMatch = after.match(/^[ \t]+/);
+            if (wsMatch) {
+              const pathStartIdx = includeIdx + '@include'.length + wsMatch[0].length;
+              // The path token runs until whitespace or end of codePart
+              let pathEndIdx = pathStartIdx;
+              while (pathEndIdx < codePart.length) {
+                const ch = codePart[pathEndIdx];
+                if (ch === ' ' || ch === '\t') break;
+                pathEndIdx++;
+              }
+              // If cursor is inside the path token, try resolving it
+              if (position.character >= pathStartIdx && position.character <= pathEndIdx) {
+                const rel = codePart.slice(pathStartIdx, pathEndIdx);
+                try {
+                  const baseDir = path.dirname(document.uri.fsPath);
+                  const abs = path.resolve(baseDir, rel);
+                  // Case-sensitive check: use fs.statSync and ensure path casing as given exists
+                  if (fs.existsSync(abs)) {
+                    const stat = fs.statSync(abs);
+                    if (stat.isFile()) {
+                      return new vscode.Location(vscode.Uri.file(abs), new vscode.Position(0, 0));
+                    }
+                  }
+                } catch {
+                  // ignore resolution errors
+                }
+              }
+            }
+          }
+        }
+
         const word = getWordAtPosition(document, position);
         if (!word) return;
 
@@ -616,6 +657,55 @@ export function activate(context: vscode.ExtensionContext) {
         }
 
         return;
+      }
+    })
+  );
+
+  // Document links for @include paths: make the whole path token clickable as one piece
+  context.subscriptions.push(
+    vscode.languages.registerDocumentLinkProvider({ language: 'movescript', scheme: 'file' }, {
+      provideDocumentLinks(document) {
+        const links: vscode.DocumentLink[] = [];
+        for (let i = 0; i < document.lineCount; i++) {
+          try {
+            const full = document.lineAt(i).text;
+            // Strip trailing comments
+            const hashIdx = full.indexOf('#');
+            const codePart = hashIdx >= 0 ? full.slice(0, hashIdx) : full;
+            const includeIdx = codePart.indexOf('@include');
+            if (includeIdx < 0) continue;
+
+            const after = codePart.slice(includeIdx + '@include'.length);
+            const wsMatch = after.match(/^[ \t]+/);
+            if (!wsMatch) continue;
+            const pathStartCol = includeIdx + '@include'.length + wsMatch[0].length;
+
+            // The path token runs until whitespace or end of codePart
+            let pathEndCol = pathStartCol;
+            while (pathEndCol < codePart.length) {
+              const ch = codePart[pathEndCol];
+              if (ch === ' ' || ch === '\t') break;
+              pathEndCol++;
+            }
+
+            if (pathEndCol <= pathStartCol) continue;
+            const rel = codePart.slice(pathStartCol, pathEndCol);
+
+            // Resolve target strictly relative to the including file
+            const baseDir = path.dirname(document.uri.fsPath);
+            const abs = path.resolve(baseDir, rel);
+            if (!fs.existsSync(abs) || !fs.statSync(abs).isFile()) {
+              continue; // only link existing files
+            }
+
+            const range = new vscode.Range(new vscode.Position(i, pathStartCol), new vscode.Position(i, pathEndCol));
+            const link = new vscode.DocumentLink(range, vscode.Uri.file(abs));
+            links.push(link);
+          } catch {
+            // ignore errors per line
+          }
+        }
+        return links;
       }
     })
   );
