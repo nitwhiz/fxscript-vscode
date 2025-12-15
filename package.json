@@ -6,7 +6,7 @@
   "publisher": "nitwhiz",
   "repository": "https://github.com/nitwhiz/arena-movescript-vscode",
   "engines": {
-    "vscode": "^1.107.0"
+    "vscode": "^1.100.0"
   },
   "categories": [
     "Programming Languages"
@@ -36,12 +36,14 @@
     "vscode:prepublish": "tsc -p ./",
     "build": "tsc -p ./",
     "watch": "tsc -watch -p ./",
+    "generate-commands": "node scripts/generate-movescript-json.js",
     "package": "vsce package -o arena-movescript.vsix",
+    "vscode:install:mac": "'/Applications/Visual Studio Code.app/Contents/Resources/app/bin/code' --install-extension arena-movescript.vsix",
     "vscode:install": "code --install-extension arena-movescript.vsix"
   },
   "devDependencies": {
     "@types/node": "^24.10.4",
-    "@types/vscode": "^1.107.0",
+    "@types/vscode": "^1.100.0",
     "typescript": "^5.4.0",
     "@vscode/vsce": "^3.7.1"
   },

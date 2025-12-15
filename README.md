@@ -1,6 +1,6 @@
 # Arena MoveScript (VS Code)
 
-This VS Code extension adds language support for Arena MoveScript files (`*.ms`).
+This VS Code extension adds language support for Arena MoveScript files (`*.ms`). This is vibe coded.
 
 ## Configure MoveScript data
 

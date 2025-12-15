@@ -109,16 +109,17 @@ function createCompletionProvider(context: vscode.ExtensionContext) {
                 items.push(it);
               }
             } else if (expectedType === 'identifier') {
-              // Suggest both identifiers and variables (handled the same way)
+              // Suggest identifiers only
               for (const id of identifiersFromConfig) {
                 const it = new vscode.CompletionItem(id, vscode.CompletionItemKind.Variable);
                 it.detail = 'identifier';
                 it.insertText = id;
                 items.push(it);
               }
+            } else if (expectedType === 'variable') {
               for (const v of variablesFromConfig) {
                 const it = new vscode.CompletionItem(v, vscode.CompletionItemKind.Variable);
-                it.detail = 'identifier';
+                it.detail = 'variable';
                 it.insertText = v;
                 items.push(it);
               }
@@ -639,7 +640,7 @@ import * as path from 'path';
 const IDENT_RE = /[A-Za-z_][A-Za-z0-9_]*/g;
 const LABEL_DEF_RE = /^\s*([A-Za-z_][A-Za-z0-9_]*)\s*:/;
 
-type ArgType = 'label' | 'string' | 'number' | 'flag' | 'identifier';
+type ArgType = 'label' | 'string' | 'number' | 'flag' | 'identifier' | 'variable';
 
 interface ArgSpec {
   name: string;
@@ -675,7 +676,7 @@ function readMovescript(context: vscode.ExtensionContext): MovescriptConfig {
             ? c.args.map((a: any) => {
                 if (a && typeof a === 'object') {
                   const name = typeof a.name === 'string' ? a.name : String(a.name ?? 'arg');
-                  const type: ArgType | undefined = ['label', 'string', 'number', 'flag', 'identifier'].includes(a.type) ? (a.type as ArgType) : undefined;
+                  const type: ArgType | undefined = ['label', 'string', 'number', 'flag', 'identifier', 'variable'].includes(a.type) ? (a.type as ArgType) : undefined;
                   return { name, type } as ArgSpec;
                 } else {
                   return { name: String(a) } as ArgSpec;

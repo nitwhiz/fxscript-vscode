@@ -1,40 +1,323 @@
 {
   "commands": [
-    { "name": "none" },
-    { "name": "hostCall" },
-    { "name": "nop" },
-    { "name": "goto" },
-    { "name": "set" },
-    { "name": "copy" },
-    { "name": "setFlag" },
-    { "name": "clearFlag" },
-    { "name": "add" },
-    { "name": "call" },
-    { "name": "ret" },
-    { "name": "jumpIf" },
-    { "name": "jumpIfFlag" },
-    { "name": "jumpIfNotFlag" },
-    { "name": "damageCalc" },
-    { "name": "critCalc" },
-    { "name": "typeCalc" },
-    { "name": "canceler" },
-    { "name": "accuracyCheck" },
-    { "name": "hpUpdate" },
-    { "name": "setSecondaryEffect" },
-    { "name": "secondaryEffect" },
-    { "name": "stat" },
-    { "name": "ohKo" },
-    { "name": "ailment" },
-    { "name": "recoil" },
-    { "name": "setSource" },
-    { "name": "setTarget" },
-    { "name": "moveEnd" },
-    { "name": "print" },
-    { "name": "jumpIfMove" },
-    { "name": "randCall" },
-    { "name": "randJump" },
-    { "name": "damageSet" },
-    { "name": "count" }
+    {
+      "name": "hostCall",
+      "args": []
+    },
+    {
+      "name": "nop",
+      "args": []
+    },
+    {
+      "name": "goto",
+      "args": [
+        {
+          "name": "jumpPtr",
+          "type": "label"
+        }
+      ]
+    },
+    {
+      "name": "set",
+      "args": [
+        {
+          "name": "variable",
+          "type": "variable"
+        },
+        {
+          "name": "value",
+          "type": "number"
+        }
+      ],
+      "detail": "set variable value"
+    },
+    {
+      "name": "copy",
+      "args": [
+        {
+          "name": "to",
+          "type": "variable"
+        }
+      ],
+      "detail": "copy variable value"
+    },
+    {
+      "name": "setFlag",
+      "args": [
+        {
+          "name": "variable",
+          "type": "variable"
+        },
+        {
+          "name": "flag",
+          "type": "flag"
+        }
+      ]
+    },
+    {
+      "name": "clearFlag",
+      "args": [
+        {
+          "name": "variable",
+          "type": "variable"
+        },
+        {
+          "name": "flag",
+          "type": "flag"
+        }
+      ]
+    },
+    {
+      "name": "add",
+      "args": [
+        {
+          "name": "variable",
+          "type": "variable"
+        },
+        {
+          "name": "value",
+          "type": "number"
+        }
+      ]
+    },
+    {
+      "name": "call",
+      "args": [
+        {
+          "name": "ptr",
+          "type": "label"
+        }
+      ]
+    },
+    {
+      "name": "ret",
+      "args": []
+    },
+    {
+      "name": "jumpIf",
+      "args": [
+        {
+          "name": "variable",
+          "type": "variable"
+        },
+        {
+          "name": "value",
+          "type": "number"
+        },
+        {
+          "name": "jumpPtr",
+          "type": "label"
+        }
+      ]
+    },
+    {
+      "name": "jumpIfFlag",
+      "args": [
+        {
+          "name": "variable",
+          "type": "variable"
+        },
+        {
+          "name": "flag",
+          "type": "flag"
+        },
+        {
+          "name": "jumpPtr",
+          "type": "label"
+        }
+      ]
+    },
+    {
+      "name": "jumpIfNotFlag",
+      "args": [
+        {
+          "name": "variable",
+          "type": "variable"
+        },
+        {
+          "name": "flag",
+          "type": "flag"
+        },
+        {
+          "name": "jumpPtr",
+          "type": "label"
+        }
+      ]
+    },
+    {
+      "name": "damageCalc",
+      "args": [
+        {
+          "name": "power",
+          "type": "number"
+        }
+      ]
+    },
+    {
+      "name": "critCalc",
+      "args": []
+    },
+    {
+      "name": "typeCalc",
+      "args": []
+    },
+    {
+      "name": "canceler",
+      "args": [
+        {
+          "name": "jumpPtr",
+          "type": "label"
+        }
+      ]
+    },
+    {
+      "name": "accuracyCheck",
+      "args": [
+        {
+          "name": "jumpPtr",
+          "type": "label"
+        }
+      ]
+    },
+    {
+      "name": "hpUpdate",
+      "args": []
+    },
+    {
+      "name": "setSecondaryEffect",
+      "args": [
+        {
+          "name": "fnPtr",
+          "type": "label"
+        },
+        {
+          "name": "chance",
+          "type": "number"
+        }
+      ]
+    },
+    {
+      "name": "secondaryEffect",
+      "args": []
+    },
+    {
+      "name": "stat",
+      "args": [
+        {
+          "name": "statRef",
+          "type": "identifier"
+        },
+        {
+          "name": "change",
+          "type": "number"
+        }
+      ]
+    },
+    {
+      "name": "ohKo",
+      "args": []
+    },
+    {
+      "name": "ailment",
+      "args": [
+        {
+          "name": "ailmentRef",
+          "type": "identifier"
+        }
+      ]
+    },
+    {
+      "name": "recoil",
+      "args": [
+        {
+          "name": "typeRef",
+          "type": "identifier"
+        }
+      ]
+    },
+    {
+      "name": "setSource",
+      "args": [
+        {
+          "name": "sourceRef",
+          "type": "identifier"
+        }
+      ]
+    },
+    {
+      "name": "setTarget",
+      "args": [
+        {
+          "name": "targetRef",
+          "type": "identifier"
+        }
+      ]
+    },
+    {
+      "name": "moveEnd",
+      "args": []
+    },
+    {
+      "name": "print",
+      "args": [
+        {
+          "name": "str",
+          "type": "string"
+        },
+        {
+          "name": "arg",
+          "type": "variable"
+        }
+      ]
+    },
+    {
+      "name": "jumpIfMove",
+      "args": [
+        {
+          "name": "identifier",
+          "type": "string"
+        },
+        {
+          "name": "jumpPtr",
+          "type": "label"
+        }
+      ]
+    },
+    {
+      "name": "randCall",
+      "args": [
+        {
+          "name": "fnPtr",
+          "type": "label"
+        },
+        {
+          "name": "chance",
+          "type": "number"
+        }
+      ]
+    },
+    {
+      "name": "randJump",
+      "args": [
+        {
+          "name": "jumpPtr",
+          "type": "label"
+        },
+        {
+          "name": "chance",
+          "type": "number"
+        }
+      ]
+    },
+    {
+      "name": "damageSet",
+      "args": [
+        {
+          "name": "damageType",
+          "type": "identifier"
+        }
+      ]
+    }
   ],
   "flags": [
     "moveMissed",
