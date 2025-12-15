@@ -547,7 +547,7 @@ export function activate(context: vscode.ExtensionContext) {
   }
 
   function getWordAtPosition(document: vscode.TextDocument, position: vscode.Position): string | null {
-    const range = document.getWordRangeAtPosition(position, /[A-Za-z_][A-Za-z0-9_]*/);
+    const range = document.getWordRangeAtPosition(position, /[A-Za-z_][A-Za-z0-9_-]*/);
     return range ? document.getText(range) : null;
   }
 
@@ -557,6 +557,48 @@ export function activate(context: vscode.ExtensionContext) {
       async provideDefinition(document, position) {
         const word = getWordAtPosition(document, position);
         if (!word) return;
+
+        // Special case: when on `ret`, jump to callsites of the enclosing label
+        if (word === 'ret') {
+          // find enclosing label name by scanning upward
+          const enclosing = (() => {
+            for (let line = position.line; line >= 0; line--) {
+              const text = document.lineAt(line).text;
+              const m = LABEL_DEF_RE.exec(text);
+              if (m) return m[1];
+            }
+            return null;
+          })();
+
+          if (enclosing) {
+            const locations: vscode.Location[] = [];
+            const uris = await vscode.workspace.findFiles('**/*.ms');
+            const callRe = new RegExp(`^\\s*call\\s+${enclosing}(?![A-Za-z0-9_-])`);
+            for (const uri of uris) {
+              try {
+                const doc = await vscode.workspace.openTextDocument(uri);
+                for (let i = 0; i < doc.lineCount; i++) {
+                  const full = doc.lineAt(i).text;
+                  // strip trailing comments
+                  const noComment = (() => {
+                    const hash = full.indexOf('#');
+                    return hash >= 0 ? full.slice(0, hash) : full;
+                  })();
+                  if (!callRe.test(noComment)) continue;
+                  const idx = noComment.indexOf(enclosing);
+                  const start = new vscode.Position(i, Math.max(0, idx));
+                  const end = new vscode.Position(i, Math.max(0, idx) + enclosing.length);
+                  locations.push(new vscode.Location(uri, new vscode.Range(start, end)));
+                }
+              } catch {
+                // ignore file errors
+              }
+            }
+
+            if (locations.length > 0) return locations;
+          }
+          // If no enclosing label or no callsites found, fall through to standard behavior
+        }
 
         // Prefer const definitions if the name matches a const; else fall back to labels
         const constMap = await collectAllConstDefinitions();
@@ -587,7 +629,7 @@ export function activate(context: vscode.ExtensionContext) {
 
         const occurrences: vscode.Location[] = [];
         const uris = await vscode.workspace.findFiles('**/*.ms');
-        const wordRe = new RegExp(`(?<![A-Za-z0-9_])${word}(?![A-Za-z0-9_])`, 'g');
+        const wordRe = new RegExp(`(?<![A-Za-z0-9_-])${word}(?![A-Za-z0-9_-])`, 'g');
 
         for (const uri of uris) {
           try {
@@ -637,8 +679,8 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 // Regex helpers and shared matchers
-const IDENT_RE = /[A-Za-z_][A-Za-z0-9_]*/g;
-const LABEL_DEF_RE = /^\s*([A-Za-z_][A-Za-z0-9_]*)\s*:/;
+const IDENT_RE = /[A-Za-z_][A-Za-z0-9_-]*/g;
+const LABEL_DEF_RE = /^\s*([A-Za-z_][A-Za-z0-9_-]*)\s*:/;
 
 type ArgType = 'label' | 'string' | 'number' | 'flag' | 'identifier' | 'variable';
 
