@@ -1,4 +1,14 @@
 
+import * as vscode from 'vscode';
+import * as fs from 'fs';
+import * as path from 'path';
+
+// Regex helpers and shared matchers
+const IDENT_RE = /[A-Za-z_][A-Za-z0-9_-]*/g;
+const LABEL_DEF_RE = /^\s*([A-Za-z_][A-Za-z0-9_-]*)\s*:/;
+const MACRO_DEF_RE = /^macro\s+([A-Za-z_][A-Za-z0-9_]*)/;
+const CONST_DEF_RE = /^\s*const\s+([A-Za-z_][A-Za-z0-9_]*)\b/;
+
 async function collectWorkspaceSymbols(): Promise<ReturnType<typeof extractSymbolsFromText>> {
   const macros = new Set<string>();
   const consts = new Map<string, ConstType>();
@@ -336,9 +346,33 @@ function createCompletionProvider(context: vscode.ExtensionContext) {
 }
 
 export function activate(context: vscode.ExtensionContext) {
+  const unimplementedProvider = new UnimplementedTreeDataProvider();
+  context.subscriptions.push(
+    vscode.window.registerTreeDataProvider('movescript-todo', unimplementedProvider)
+  );
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand('movescript.openUnimplemented', (uri: vscode.Uri, range: vscode.Range) => {
+      vscode.window.showTextDocument(uri, { selection: range });
+    })
+  );
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand('movescript.refreshUnimplemented', () => {
+      unimplementedProvider.refresh();
+    })
+  );
+
   const provider = createCompletionProvider(context);
   context.subscriptions.push(
     vscode.languages.registerCompletionItemProvider({ language: 'movescript', scheme: 'file' }, provider, ' ', '\"', '@', '{')
+  );
+
+  context.subscriptions.push(
+    vscode.languages.registerDocumentSymbolProvider(
+      { language: 'movescript' },
+      new MoveScriptDocumentSymbolProvider()
+    )
   );
 
   // Hover: show signature and optional detail for known commands from commands.json
@@ -584,8 +618,6 @@ export function activate(context: vscode.ExtensionContext) {
     range: vscode.Range; // macro name token range
   }
 
-  const MACRO_DEF_RE = /^macro\s+([A-Za-z_][A-Za-z0-9_]*)/;
-
   async function collectAllMacroDefinitions(): Promise<Map<string, MacroDef[]>> {
     const map = new Map<string, MacroDef[]>();
     const uris = await vscode.workspace.findFiles('**/*.ms');
@@ -644,8 +676,6 @@ export function activate(context: vscode.ExtensionContext) {
     }
     return map;
   }
-
-  const CONST_DEF_RE = /^\s*const\s+([A-Za-z_][A-Za-z0-9_]*)\b/;
 
   async function collectAllConstDefinitions(): Promise<Map<string, ConstDef[]>> {
     const map = new Map<string, ConstDef[]>();
@@ -1078,7 +1108,10 @@ export function activate(context: vscode.ExtensionContext) {
   );
   context.subscriptions.push(
     vscode.workspace.onDidSaveTextDocument(doc => {
-      if (doc.languageId === 'movescript') validateDocument(doc);
+      if (doc.languageId === 'movescript') {
+        validateDocument(doc);
+        unimplementedProvider.refresh();
+      }
     })
   );
   context.subscriptions.push(
@@ -1089,15 +1122,136 @@ export function activate(context: vscode.ExtensionContext) {
   );
 }
 
+class MoveScriptDocumentSymbolProvider implements vscode.DocumentSymbolProvider {
+  public provideDocumentSymbols(
+    document: vscode.TextDocument,
+    token: vscode.CancellationToken
+  ): vscode.ProviderResult<vscode.SymbolInformation[] | vscode.DocumentSymbol[]> {
+    const symbols: vscode.DocumentSymbol[] = [];
+    for (let i = 0; i < document.lineCount; i++) {
+      const line = document.lineAt(i);
+      const text = line.text;
+
+      // Label definitions
+      const labelMatch = text.match(LABEL_DEF_RE);
+      if (labelMatch) {
+        const name = labelMatch[1];
+        const range = line.range;
+        const selectionRange = new vscode.Range(i, text.indexOf(name), i, text.indexOf(name) + name.length);
+        symbols.push(new vscode.DocumentSymbol(
+          name,
+          '',
+          vscode.SymbolKind.Function,
+          range,
+          selectionRange
+        ));
+      }
+
+      // Macro definitions
+      const macroMatch = text.match(MACRO_DEF_RE);
+      if (macroMatch) {
+        const name = macroMatch[1];
+        const range = line.range;
+        const selectionRange = new vscode.Range(i, text.indexOf(name), i, text.indexOf(name) + name.length);
+        symbols.push(new vscode.DocumentSymbol(
+          name,
+          'macro',
+          vscode.SymbolKind.Module,
+          range,
+          selectionRange
+        ));
+      }
+
+      // Const definitions
+      const constMatch = text.match(CONST_DEF_RE);
+      if (constMatch) {
+        const name = constMatch[1];
+        const range = line.range;
+        const selectionRange = new vscode.Range(i, text.indexOf(name), i, text.indexOf(name) + name.length);
+        symbols.push(new vscode.DocumentSymbol(
+          name,
+          'const',
+          vscode.SymbolKind.Constant,
+          range,
+          selectionRange
+        ));
+      }
+    }
+    return symbols;
+  }
+}
+
+class UnimplementedTreeItem extends vscode.TreeItem {
+  constructor(
+    public readonly labelName: string,
+    public readonly fileName: string,
+    public readonly uri: vscode.Uri,
+    public readonly range: vscode.Range,
+    public readonly collapsibleState: vscode.TreeItemCollapsibleState
+  ) {
+    super(labelName, collapsibleState);
+    this.tooltip = `${this.uri.fsPath}:${this.range.start.line + 1}`;
+    this.description = `${fileName}:${this.range.start.line + 1}`;
+    this.command = {
+      command: 'movescript.openUnimplemented',
+      title: 'Open Unimplemented Location',
+      arguments: [this.uri, this.range]
+    };
+  }
+}
+
+class UnimplementedTreeDataProvider implements vscode.TreeDataProvider<UnimplementedTreeItem> {
+  private _onDidChangeTreeData: vscode.EventEmitter<UnimplementedTreeItem | undefined | null | void> = new vscode.EventEmitter<UnimplementedTreeItem | undefined | null | void>();
+  readonly onDidChangeTreeData: vscode.Event<UnimplementedTreeItem | undefined | null | void> = this._onDidChangeTreeData.event;
+
+  refresh(): void {
+    this._onDidChangeTreeData.fire();
+  }
+
+  getTreeItem(element: UnimplementedTreeItem): vscode.TreeItem {
+    return element;
+  }
+
+  async getChildren(element?: UnimplementedTreeItem): Promise<UnimplementedTreeItem[]> {
+    if (element) {
+      return [];
+    }
+
+    const items: UnimplementedTreeItem[] = [];
+    const uris = await vscode.workspace.findFiles('**/*.ms');
+    const gotoRE = /^\s*goto\s+_notImplemented\b/;
+
+    for (const uri of uris) {
+      try {
+        const doc = await vscode.workspace.openTextDocument(uri);
+        let lastLabel = '';
+        for (let i = 0; i < doc.lineCount; i++) {
+          const text = doc.lineAt(i).text;
+
+          const labelMatch = text.match(LABEL_DEF_RE);
+          if (labelMatch) {
+            lastLabel = labelMatch[1];
+          }
+
+          const match = text.match(gotoRE);
+          if (match) {
+            const startIdx = text.indexOf('goto');
+            const range = new vscode.Range(i, startIdx, i, text.length);
+            const fileName = path.basename(uri.fsPath);
+            const labelToShow = lastLabel ? lastLabel : 'unknown';
+            items.push(new UnimplementedTreeItem(labelToShow, fileName, uri, range, vscode.TreeItemCollapsibleState.None));
+          }
+        }
+      } catch {
+        // ignore
+      }
+    }
+
+    return items.sort((a, b) => a.range.start.line - b.range.start.line || a.fileName.localeCompare(b.fileName));
+  }
+}
+
 export function deactivate() {}
-
-import * as vscode from 'vscode';
-import * as fs from 'fs';
-import * as path from 'path';
-
-// Regex helpers and shared matchers
-const IDENT_RE = /[A-Za-z_][A-Za-z0-9_-]*/g;
-const LABEL_DEF_RE = /^\s*([A-Za-z_][A-Za-z0-9_-]*)\s*:/;
 
 type ArgType = 'label' | 'string' | 'number' | 'flag' | 'identifier' | 'variable';
 

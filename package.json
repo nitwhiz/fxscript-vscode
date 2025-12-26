@@ -12,6 +12,44 @@
     "Programming Languages"
   ],
   "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "movescript-explorer",
+          "title": "MoveScript",
+          "icon": "$(search-stop)"
+        }
+      ]
+    },
+    "views": {
+      "movescript-explorer": [
+        {
+          "id": "movescript-todo",
+          "name": "Unimplemented (goto _notImplemented)",
+          "type": "tree"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "movescript.openUnimplemented",
+        "title": "Open Unimplemented Location"
+      },
+      {
+        "command": "movescript.refreshUnimplemented",
+        "title": "Refresh Unimplemented List",
+        "icon": "$(refresh)"
+      }
+    ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "movescript.refreshUnimplemented",
+          "when": "view == movescript-todo",
+          "group": "navigation"
+        }
+      ]
+    },
     "languages": [
       {
         "id": "movescript",
@@ -29,7 +67,10 @@
     ]
   },
   "activationEvents": [
-    "onLanguage:movescript"
+    "onLanguage:movescript",
+    "onView:movescript-todo",
+    "onCommand:movescript.openUnimplemented",
+    "onCommand:movescript.refreshUnimplemented"
   ],
   "main": "./out/extension.js",
   "scripts": {
