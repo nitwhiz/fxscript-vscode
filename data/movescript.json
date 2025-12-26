@@ -28,8 +28,7 @@
           "name": "value",
           "type": "number"
         }
-      ],
-      "detail": "set variable value"
+      ]
     },
     {
       "name": "copy",
@@ -42,8 +41,7 @@
           "name": "to",
           "type": "variable"
         }
-      ],
-      "detail": "copy variable value"
+      ]
     },
     {
       "name": "setFlag",

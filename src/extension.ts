@@ -578,6 +578,43 @@ export function activate(context: vscode.ExtensionContext) {
     range: vscode.Range; // const name token range
   }
 
+  interface MacroDef {
+    name: string;
+    uri: vscode.Uri;
+    range: vscode.Range; // macro name token range
+  }
+
+  const MACRO_DEF_RE = /^macro\s+([A-Za-z_][A-Za-z0-9_]*)/;
+
+  async function collectAllMacroDefinitions(): Promise<Map<string, MacroDef[]>> {
+    const map = new Map<string, MacroDef[]>();
+    const uris = await vscode.workspace.findFiles('**/*.ms');
+    for (const uri of uris) {
+      try {
+        const doc = await vscode.workspace.openTextDocument(uri);
+        for (let i = 0; i < doc.lineCount; i++) {
+          const text = doc.lineAt(i).text;
+          const trimmed = text.trimStart();
+          if (trimmed.startsWith('#')) continue;
+          const m = trimmed.match(MACRO_DEF_RE);
+          if (m) {
+            const name = m[1];
+            const startIdx = text.indexOf(name);
+            const start = new vscode.Position(i, startIdx);
+            const end = new vscode.Position(i, startIdx + name.length);
+            const entry: MacroDef = { name, uri, range: new vscode.Range(start, end) };
+            const arr = map.get(name) || [];
+            arr.push(entry);
+            map.set(name, arr);
+          }
+        }
+      } catch {
+        // ignore file errors
+      }
+    }
+    return map;
+  }
+
   async function collectAllLabelDefinitions(): Promise<Map<string, LabelDef[]>> {
     const map = new Map<string, LabelDef[]>();
     const uris = await vscode.workspace.findFiles('**/*.ms');
@@ -758,6 +795,13 @@ export function activate(context: vscode.ExtensionContext) {
         const labelDefs = labelMap.get(word);
         if (labelDefs && labelDefs.length > 0) {
           const last = labelDefs[labelDefs.length - 1];
+          return new vscode.Location(last.uri, last.range);
+        }
+
+        const macroMap = await collectAllMacroDefinitions();
+        const macroDefs = macroMap.get(word);
+        if (macroDefs && macroDefs.length > 0) {
+          const last = macroDefs[macroDefs.length - 1];
           return new vscode.Location(last.uri, last.range);
         }
 
