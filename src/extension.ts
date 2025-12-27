@@ -474,23 +474,31 @@ export function activate(context: vscode.ExtensionContext) {
   const identifiersSet = new Set(msForSem.identifiers || []);
   const variablesSet = new Set(msForSem.variables || []);
 
-  // Workspace labels cache for semantic tokens
-  let labelCache = new Set<string>();
+  // Workspace labels cache for diagnostics and navigation
+  let workspaceLabels = new Map<string, LabelDef[]>();
   async function refreshLabels() {
     try {
-      const ws = await collectWorkspaceSymbols();
-      labelCache = new Set(ws.labels);
+      workspaceLabels = await collectAllLabelDefinitions();
     } catch {
-      labelCache = new Set();
+      workspaceLabels = new Map();
+    }
+    // Re-validate all open movescript documents when the workspace-wide labels change
+    for (const doc of vscode.workspace.textDocuments) {
+      if (doc.languageId === 'movescript') {
+        validateDocument(doc);
+      }
     }
   }
   // Initial fill and refresh on saves
   refreshLabels();
-  context.subscriptions.push(
-    vscode.workspace.onDidSaveTextDocument(doc => {
-      if (doc.languageId === 'movescript') refreshLabels();
-    })
-  );
+
+  let refreshTimer: NodeJS.Timeout | undefined;
+  function debounceRefresh() {
+    if (refreshTimer) clearTimeout(refreshTimer);
+    refreshTimer = setTimeout(() => {
+      refreshLabels();
+    }, 500);
+  }
 
   // Define legend using built-in token types for good theme support
   const legend = new vscode.SemanticTokensLegend(
@@ -580,7 +588,7 @@ export function activate(context: vscode.ExtensionContext) {
                   builder.push(lineNum, idx, text.length, 1, 0);
                 } else if (identifiersSet.has(text) || variablesSet.has(text)) {
                   builder.push(lineNum, idx, text.length, 2, 0);
-                } else if (labelCache.has(text)) {
+                } else if (workspaceLabels.has(text)) {
                   builder.push(lineNum, idx, text.length, 3, 0);
                 }
                 idx += text.length;
@@ -821,9 +829,16 @@ export function activate(context: vscode.ExtensionContext) {
           return new vscode.Location(last.uri, last.range);
         }
 
-        const labelMap = await collectAllLabelDefinitions();
-        const labelDefs = labelMap.get(word);
+        const labelDefs = workspaceLabels.get(word);
         if (labelDefs && labelDefs.length > 0) {
+          // If we are currently on a definition, navigate to the first *other* definition
+          const isOnDefIdx = labelDefs.findIndex(ld => ld.uri.toString() === document.uri.toString() && ld.range.contains(position));
+          if (isOnDefIdx !== -1 && labelDefs.length > 1) {
+            const otherIdx = (isOnDefIdx === 0) ? 1 : 0;
+            const other = labelDefs[otherIdx];
+            return new vscode.Location(other.uri, other.range);
+          }
+          // Default: jump to the last definition
           const last = labelDefs[labelDefs.length - 1];
           return new vscode.Location(last.uri, last.range);
         }
@@ -1010,13 +1025,18 @@ export function activate(context: vscode.ExtensionContext) {
   function validateDocument(document: vscode.TextDocument) {
     if (document.languageId !== 'movescript') return;
     const diags: vscode.Diagnostic[] = [];
+
     for (let lineNum = 0; lineNum < document.lineCount; lineNum++) {
       const full = document.lineAt(lineNum).text;
       // ignore pure comment lines
       const trimmedStart = full.trimStart();
       if (!trimmedStart) continue;
       if (trimmedStart.startsWith('#')) continue;
-      if (isLabelDefinition(full)) continue;
+
+      const labelMatch = full.match(LABEL_DEF_RE);
+      if (labelMatch) {
+        continue;
+      }
 
       const tokens = tokenize(full);
       // Validate tags inside string tokens: {tag}
@@ -1092,6 +1112,43 @@ export function activate(context: vscode.ExtensionContext) {
         }
       }
     }
+
+    // Check for duplicate labels using workspace-wide cache
+    const docLabels = new Set<string>();
+    for (let lineNum = 0; lineNum < document.lineCount; lineNum++) {
+      const full = document.lineAt(lineNum).text;
+      const labelMatch = full.match(LABEL_DEF_RE);
+      if (labelMatch) {
+        const name = labelMatch[1];
+        const startIdx = full.indexOf(name);
+        const range = new vscode.Range(lineNum, startIdx, lineNum, startIdx + name.length);
+
+        const allDefs = workspaceLabels.get(name) || [];
+        if (allDefs.length > 1) {
+          // Find the first *other* definition
+          const otherDef = allDefs.find(d =>
+            d.uri.toString() !== document.uri.toString() ||
+            d.range.start.line !== lineNum
+          );
+
+          if (otherDef) {
+            const diag = new vscode.Diagnostic(
+              range,
+              `Duplicate label definition: ${name}`,
+              vscode.DiagnosticSeverity.Error
+            );
+            diag.relatedInformation = [
+              new vscode.DiagnosticRelatedInformation(
+                new vscode.Location(otherDef.uri, otherDef.range),
+                `Other definition of ${name} in ${path.basename(otherDef.uri.fsPath)}`
+              )
+            ];
+            diags.push(diag);
+          }
+        }
+      }
+    }
+
     diagnostics.set(document.uri, diags);
   }
 
@@ -1103,12 +1160,16 @@ export function activate(context: vscode.ExtensionContext) {
   // Re-validate on open/save/change
   context.subscriptions.push(
     vscode.workspace.onDidOpenTextDocument(doc => {
-      if (doc.languageId === 'movescript') validateDocument(doc);
+      if (doc.languageId === 'movescript') {
+        refreshLabels();
+        validateDocument(doc);
+      }
     })
   );
   context.subscriptions.push(
     vscode.workspace.onDidSaveTextDocument(doc => {
       if (doc.languageId === 'movescript') {
+        refreshLabels();
         validateDocument(doc);
         unimplementedProvider.refresh();
       }
@@ -1117,7 +1178,10 @@ export function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(
     vscode.workspace.onDidChangeTextDocument(evt => {
       const doc = evt.document;
-      if (doc.languageId === 'movescript') validateDocument(doc);
+      if (doc.languageId === 'movescript') {
+        validateDocument(doc);
+        debounceRefresh();
+      }
     })
   );
 }

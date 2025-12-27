@@ -165,16 +165,6 @@
       "args": []
     },
     {
-      "name": "canceler",
-      "args": [
-        {
-          "name": "jumpPtr",
-          "type": "label",
-          "optional": true
-        }
-      ]
-    },
-    {
       "name": "accuracyCheck",
       "args": [
         {
@@ -285,6 +275,23 @@
       ]
     },
     {
+      "name": "jumpIfLastMove",
+      "args": [
+        {
+          "name": "ref",
+          "type": "identifier"
+        },
+        {
+          "name": "identifier",
+          "type": "string"
+        },
+        {
+          "name": "jumpPtr",
+          "type": "label"
+        }
+      ]
+    },
+    {
       "name": "randCall",
       "args": [
         {
@@ -369,7 +376,9 @@
     "ailmentWrapped",
     "recoilTypeMiss",
     "recoilType25",
-    "damageTypeHp16"
+    "damageTypeHp16",
+    "damageTypeDouble",
+    "defenderLastMove"
   ],
   "variables": [
     "multiHitCounter",
