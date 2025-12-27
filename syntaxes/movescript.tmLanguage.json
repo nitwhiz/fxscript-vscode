@@ -89,7 +89,7 @@
           "patterns": [
             {
               "name": "constant.character.escape.movescript",
-              "match": "\\."
+              "match": "\\\\."
             },
             {
               "name": "variable.interpolation.movescript",
