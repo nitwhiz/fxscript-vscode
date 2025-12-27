@@ -615,6 +615,7 @@ export function activate(context: vscode.ExtensionContext) {
     name: string;
     uri: vscode.Uri;
     range: vscode.Range; // full label token range (name only)
+    documentation?: string;
   }
 
   interface ConstDef {
@@ -627,6 +628,7 @@ export function activate(context: vscode.ExtensionContext) {
     name: string;
     uri: vscode.Uri;
     range: vscode.Range; // macro name token range
+    documentation?: string;
   }
 
   async function collectAllMacroDefinitions(): Promise<Map<string, MacroDef[]>> {
@@ -645,7 +647,24 @@ export function activate(context: vscode.ExtensionContext) {
             const startIdx = text.indexOf(name);
             const start = new vscode.Position(i, startIdx);
             const end = new vscode.Position(i, startIdx + name.length);
-            const entry: MacroDef = { name, uri, range: new vscode.Range(start, end) };
+
+            // Collect documentation: immediate comment lines above
+            const strictDocs: string[] = [];
+            for (let j = i - 1; j >= 0; j--) {
+              const prevLine = doc.lineAt(j).text.trim();
+              if (prevLine.startsWith('#')) {
+                strictDocs.unshift(prevLine.slice(1).trim());
+              } else {
+                break;
+              }
+            }
+
+            const entry: MacroDef = {
+              name,
+              uri,
+              range: new vscode.Range(start, end),
+              documentation: strictDocs.length > 0 ? strictDocs.join('\n') : undefined
+            };
             const arr = map.get(name) || [];
             arr.push(entry);
             map.set(name, arr);
@@ -675,7 +694,24 @@ export function activate(context: vscode.ExtensionContext) {
             const startIdx = text.indexOf(name);
             const start = new vscode.Position(i, startIdx);
             const end = new vscode.Position(i, startIdx + name.length);
-            const entry: LabelDef = { name, uri, range: new vscode.Range(start, end) };
+
+            // Collect documentation: immediate comment lines above
+            const docs: string[] = [];
+            for (let j = i - 1; j >= 0; j--) {
+              const prevLine = doc.lineAt(j).text.trim();
+              if (prevLine.startsWith('#')) {
+                docs.unshift(prevLine.slice(1).trim());
+              } else {
+                break;
+              }
+            }
+
+            const entry: LabelDef = {
+              name,
+              uri,
+              range: new vscode.Range(start, end),
+              documentation: docs.length > 0 ? docs.join('\n') : undefined
+            };
             const arr = map.get(name) || [];
             arr.push(entry);
             map.set(name, arr);
@@ -1131,6 +1167,23 @@ export function activate(context: vscode.ExtensionContext) {
           diags.push(d);
         }
       }
+
+      // Check argument types (specifically 'label' type)
+      for (let i = 0; i < Math.min(provided, expectedMax); i++) {
+        const argSpec = argsArray[i];
+        const token = tokens[i + 1];
+        if (argSpec.type === 'label') {
+          const labelName = token.text;
+          if (!workspaceLabels.has(labelName)) {
+            const range = new vscode.Range(
+              new vscode.Position(lineNum, token.start),
+              new vscode.Position(lineNum, token.end)
+            );
+            const d = new vscode.Diagnostic(range, `Label not found: ${labelName}`, vscode.DiagnosticSeverity.Error);
+            diags.push(d);
+          }
+        }
+      }
     }
 
     // Check for duplicate labels using workspace-wide cache
@@ -1171,6 +1224,55 @@ export function activate(context: vscode.ExtensionContext) {
 
     diagnostics.set(document.uri, diags);
   }
+
+  // Hover provider: show documentation for labels and macros
+  context.subscriptions.push(
+    vscode.languages.registerHoverProvider('movescript', {
+      async provideHover(document, position) {
+        const word = getWordAtPosition(document, position);
+        if (!word) return;
+
+        const parts: string[] = [];
+
+        // Check macros
+        const macroDefs = workspaceMacros.get(word);
+        if (macroDefs && macroDefs.length > 0) {
+          parts.push('**macro**');
+          const doc = macroDefs[0].documentation;
+          if (doc) {
+            parts.push(doc);
+          }
+        } else {
+          // Check commands (only if not a macro, or should we show both? user said "if it's one of the two")
+          const spec = diagMs.commands?.find(c => c.name === word);
+          if (spec) {
+            parts.push('**command**');
+            if (spec.detail) {
+              parts.push(spec.detail);
+            }
+          }
+        }
+
+        // Check labels (keep them but maybe add label prefix?)
+        if (parts.length === 0) {
+          const labelDefs = workspaceLabels.get(word);
+          if (labelDefs && labelDefs.length > 0) {
+            parts.push('**label**');
+            const doc = labelDefs[0].documentation;
+            if (doc) {
+              parts.push(doc);
+            }
+          }
+        }
+
+        if (parts.length > 0) {
+          return new vscode.Hover(new vscode.MarkdownString(parts.join('\n\n')));
+        }
+
+        return;
+      }
+    })
+  );
 
   // Validate currently open documents
   for (const doc of vscode.workspace.textDocuments) {
