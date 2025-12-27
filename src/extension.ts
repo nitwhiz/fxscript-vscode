@@ -474,15 +474,18 @@ export function activate(context: vscode.ExtensionContext) {
   const identifiersSet = new Set(msForSem.identifiers || []);
   const variablesSet = new Set(msForSem.variables || []);
 
-  // Workspace labels cache for diagnostics and navigation
+  // Workspace symbols cache for diagnostics and navigation
   let workspaceLabels = new Map<string, LabelDef[]>();
-  async function refreshLabels() {
+  let workspaceMacros = new Map<string, MacroDef[]>();
+  async function refreshSymbols() {
     try {
       workspaceLabels = await collectAllLabelDefinitions();
+      workspaceMacros = await collectAllMacroDefinitions();
     } catch {
       workspaceLabels = new Map();
+      workspaceMacros = new Map();
     }
-    // Re-validate all open movescript documents when the workspace-wide labels change
+    // Re-validate all open movescript documents when the workspace-wide symbols change
     for (const doc of vscode.workspace.textDocuments) {
       if (doc.languageId === 'movescript') {
         validateDocument(doc);
@@ -490,13 +493,13 @@ export function activate(context: vscode.ExtensionContext) {
     }
   }
   // Initial fill and refresh on saves
-  refreshLabels();
+  refreshSymbols();
 
   let refreshTimer: NodeJS.Timeout | undefined;
   function debounceRefresh() {
     if (refreshTimer) clearTimeout(refreshTimer);
     refreshTimer = setTimeout(() => {
-      refreshLabels();
+      refreshSymbols();
     }, 500);
   }
 
@@ -959,7 +962,9 @@ export function activate(context: vscode.ExtensionContext) {
   const diagMs = readMovescript(context);
   // Map of command name -> CommandSpec (only those with fixed args defined)
   const fixedSpecMap = new Map<string, CommandSpec>();
+  const allCommandsSet = new Set<string>();
   for (const c of diagMs.commands || []) {
+    allCommandsSet.add(c.name);
     // Only include commands where args is defined (fixed-arity). If args is undefined, skip diagnostics.
     if (Object.prototype.hasOwnProperty.call(c, 'args')) {
       fixedSpecMap.set(c.name, c);
@@ -1066,7 +1071,22 @@ export function activate(context: vscode.ExtensionContext) {
       if (!cmdName) continue;
 
       const spec = fixedSpecMap.get(cmdName);
-      if (!spec) continue; // not a fixed-arity command
+      if (!spec) {
+        // If not a fixed-arity command, check if it's a known command at all, a macro, or a language keyword
+        const isKnownCommand = allCommandsSet.has(cmdName);
+        const isMacro = workspaceMacros.has(cmdName);
+        const isKeyword = ['macro', 'endmacro', 'const', '@include'].includes(cmdName);
+
+        if (!isKnownCommand && !isMacro && !isKeyword) {
+          const range = new vscode.Range(
+            new vscode.Position(lineNum, cmdToken.start),
+            new vscode.Position(lineNum, cmdToken.end)
+          );
+          const d = new vscode.Diagnostic(range, `Unknown command or macro: ${cmdName}`, vscode.DiagnosticSeverity.Error);
+          diags.push(d);
+        }
+        continue;
+      }
 
       const argsArray: ArgSpec[] = Array.isArray(spec.args) ? spec.args : [];
       const expectedMax = argsArray.length;
@@ -1161,7 +1181,7 @@ export function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(
     vscode.workspace.onDidOpenTextDocument(doc => {
       if (doc.languageId === 'movescript') {
-        refreshLabels();
+        refreshSymbols();
         validateDocument(doc);
       }
     })
@@ -1169,7 +1189,7 @@ export function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(
     vscode.workspace.onDidSaveTextDocument(doc => {
       if (doc.languageId === 'movescript') {
-        refreshLabels();
+        refreshSymbols();
         validateDocument(doc);
         unimplementedProvider.refresh();
       }
