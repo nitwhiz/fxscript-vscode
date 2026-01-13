@@ -112,6 +112,14 @@
         {
           "name": "support.function.command.movescript",
           "match": "^(\\s*)(?:(?!macro|endmacro|const|@include|call|ret|goto)[A-Za-z_][A-Za-z0-9_]*)\\b"
+        },
+        {
+          "name": "punctuation.separator.comma.movescript",
+          "match": ","
+        },
+        {
+          "name": "keyword.operator.arithmetic.movescript",
+          "match": "[-+*/%]"
         }
       ]
     }

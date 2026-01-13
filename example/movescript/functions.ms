@@ -1,5 +1,7 @@
 expression_test:
   print (33 - multiHitCounter + 22.0) * (14 / 5)
+  set multiHitCounter, 1
+  nop 12 - multiHitCounter, -5
   ret
 
 printStatUp1:

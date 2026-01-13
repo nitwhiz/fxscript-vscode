@@ -1050,9 +1050,16 @@ export function activate(context: vscode.ExtensionContext) {
           i++;
         }
         tokens.push({ text: code.slice(start, i), start, end: i });
+      } else if (code[i] === ',') {
+        i++;
+        tokens.push({ text: ',', start, end: i });
+      } else if ('+-*/%()'.includes(code[i])) {
+        // Handle operators and parentheses as separate tokens to correctly parse expressions
+        i++;
+        tokens.push({ text: code[i - 1], start, end: i });
       } else {
-        // regular token until whitespace
-        while (i < n && code[i] !== ' ' && code[i] !== '\t') i++;
+        // regular token until whitespace, comma, operator or parenthesis
+        while (i < n && code[i] !== ' ' && code[i] !== '\t' && code[i] !== ',' && !'+-*/%()'.includes(code[i])) i++;
         tokens.push({ text: code.slice(start, i), start, end: i });
       }
     }
@@ -1080,6 +1087,91 @@ export function activate(context: vscode.ExtensionContext) {
       }
 
       const tokens = tokenize(full);
+      const args: Token[][] = [];
+      if (tokens.length > 1) {
+        let currentArg: Token[] = [];
+        const isOp = (t: string) => '+-*/%'.includes(t) && t.length === 1;
+        for (let i = 1; i < tokens.length; i++) {
+          const tok = tokens[i];
+
+          if (tok.text === ',') {
+            if (currentArg.length > 0) {
+              args.push(currentArg);
+            }
+            currentArg = [];
+          } else {
+            if (currentArg.length > 0) {
+              const lastInCurrent = currentArg[currentArg.length - 1].text;
+              const nextIsOp = isOp(tok.text);
+              const lastWasOp = isOp(lastInCurrent);
+
+              const isParen = (t: string) => (t === '(' || t === ')') && t.length === 1;
+
+              if (!nextIsOp && !lastWasOp && !isParen(tok.text) && !isParen(lastInCurrent)) {
+                // Space-separated argument
+                args.push(currentArg);
+                currentArg = [tok];
+              } else {
+                // Continues expression
+                currentArg.push(tok);
+              }
+            } else {
+              currentArg.push(tok);
+            }
+          }
+        }
+        if (currentArg.length > 0) {
+          args.push(currentArg);
+        }
+      }
+      const filteredArgs = args;
+
+      // Check for unnecessary commas
+      if (tokens.length > 1) {
+        let currentArgTokens: Token[] = [];
+        for (let i = 1; i < tokens.length; i++) {
+          const tok = tokens[i];
+          if (tok.text === ',') {
+            // Check if this comma was necessary.
+            // A comma is necessary if the argument before it and the argument after it
+            // would otherwise be parsed as a single expression.
+            // Simplified heuristic: if the token before and after are part of expressions
+            // that don't explicitly require a comma but are separated by one.
+            // Realistically, the user said: "commas mainly exist to seperate if there is an expression followed by another expression (think of `cmd 1, -1` - 2 args instead of one being `1-1`.)"
+            
+            // If we have an argument before and a potential argument after.
+            if (currentArgTokens.length > 0) {
+              // Look ahead for the next argument's first token
+              let nextArgFirstTok: Token | undefined;
+              for (let j = i + 1; j < tokens.length; j++) {
+                if (tokens[j].text !== ',') {
+                  nextArgFirstTok = tokens[j];
+                  break;
+                }
+              }
+
+              if (nextArgFirstTok) {
+                const lastTokBefore = currentArgTokens[currentArgTokens.length - 1];
+                // If it's something like "set a, 1", the comma is NOT necessary if "a 1" wouldn't be a single expression.
+                // But "a-1" WOULD be a single expression.
+                // If the next token starts with '-' or '+', it might be ambiguous.
+                if (!nextArgFirstTok.text.startsWith('-') && !nextArgFirstTok.text.startsWith('+')) {
+                  const range = new vscode.Range(
+                    new vscode.Position(lineNum, tok.start),
+                    new vscode.Position(lineNum, tok.end)
+                  );
+                  const d = new vscode.Diagnostic(range, `Unnecessary comma`, vscode.DiagnosticSeverity.Information);
+                  diags.push(d);
+                }
+              }
+            }
+            currentArgTokens = [];
+          } else {
+            currentArgTokens.push(tok);
+          }
+        }
+      }
+
       // Validate tags inside string tokens: {tag}
       for (const tok of tokens) {
         if (tok.text.startsWith('"')) {
@@ -1127,13 +1219,14 @@ export function activate(context: vscode.ExtensionContext) {
       const argsArray: ArgSpec[] = Array.isArray(spec.args) ? spec.args : [];
       const expectedMax = argsArray.length;
       const expectedMin = argsArray.reduce((acc, a) => acc + (a && a.optional === true ? 0 : 1), 0);
-      const provided = Math.max(0, tokens.length - 1);
+      const provided = filteredArgs.length;
 
       if (expectedMax === 0) {
         // No args expected; any provided are extras
         if (provided > 0) {
-          const extraStartTok = tokens[1];
-          const extraEndTok = tokens[tokens.length - 1];
+          const extraStartTok = filteredArgs[0][0];
+          const lastArg = filteredArgs[filteredArgs.length - 1];
+          const extraEndTok = lastArg[lastArg.length - 1];
           const range = new vscode.Range(
             new vscode.Position(lineNum, extraStartTok.start),
             new vscode.Position(lineNum, extraEndTok.end)
@@ -1155,8 +1248,9 @@ export function activate(context: vscode.ExtensionContext) {
         diags.push(d);
       } else if (provided > expectedMax) {
         // Extra arguments: underline the extra part
-        const extraStartTok = tokens[1 + expectedMax];
-        const extraEndTok = tokens[tokens.length - 1];
+        const extraStartTok = filteredArgs[expectedMax][0];
+        const lastArg = filteredArgs[filteredArgs.length - 1];
+        const extraEndTok = lastArg[lastArg.length - 1];
         if (extraStartTok && extraEndTok) {
           const range = new vscode.Range(
             new vscode.Position(lineNum, extraStartTok.start),
@@ -1171,16 +1265,25 @@ export function activate(context: vscode.ExtensionContext) {
       // Check argument types (specifically 'label' type)
       for (let i = 0; i < Math.min(provided, expectedMax); i++) {
         const argSpec = argsArray[i];
-        const token = tokens[i + 1];
+        const argTokens = filteredArgs[i];
         if (argSpec.type === 'label') {
-          const labelName = token.text;
-          if (!workspaceLabels.has(labelName)) {
-            const range = new vscode.Range(
-              new vscode.Position(lineNum, token.start),
-              new vscode.Position(lineNum, token.end)
-            );
-            const d = new vscode.Diagnostic(range, `Label not found: ${labelName}`, vscode.DiagnosticSeverity.Error);
-            diags.push(d);
+          // A label should typically be a single token (identifier)
+          // For labels, we check if they exist in the workspaceLabels map.
+          // Since expressions can now be complex, we only validate simple labels.
+          if (argTokens.length === 1) {
+            const token = argTokens[0];
+            const labelName = token.text;
+            // Ignore numeric labels and expressions
+            if (isNaN(Number(labelName)) && !['+', '-', '*', '/', '%'].some(op => labelName.includes(op))) {
+              if (!workspaceLabels.has(labelName)) {
+                const range = new vscode.Range(
+                  new vscode.Position(lineNum, token.start),
+                  new vscode.Position(lineNum, token.end)
+                );
+                const d = new vscode.Diagnostic(range, `Label not found: ${labelName}`, vscode.DiagnosticSeverity.Error);
+                diags.push(d);
+              }
+            }
           }
         }
       }
