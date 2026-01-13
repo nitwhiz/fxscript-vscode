@@ -1,18 +1,18 @@
 {
   "commands": [
     {
-      "name": "hostCall",
+      "name": "nop",
       "args": []
     },
     {
-      "name": "nop",
+      "name": "hostCall",
       "args": []
     },
     {
       "name": "goto",
       "args": [
         {
-          "name": "jumpPtr",
+          "name": "jumpPc",
           "type": "label"
         }
       ]
@@ -86,7 +86,7 @@
       "name": "call",
       "args": [
         {
-          "name": "ptr",
+          "name": "addr",
           "type": "label"
         }
       ]
@@ -107,7 +107,7 @@
           "type": "number"
         },
         {
-          "name": "jumpPtr",
+          "name": "jumpPc",
           "type": "label"
         }
       ]
@@ -124,7 +124,7 @@
           "type": "flag"
         },
         {
-          "name": "jumpPtr",
+          "name": "jumpPc",
           "type": "label"
         }
       ]
@@ -141,7 +141,7 @@
           "type": "flag"
         },
         {
-          "name": "jumpPtr",
+          "name": "jumpPc",
           "type": "label"
         }
       ]
@@ -151,8 +151,7 @@
       "args": [
         {
           "name": "power",
-          "type": "number",
-          "optional": true
+          "type": "number"
         }
       ]
     },
@@ -168,9 +167,8 @@
       "name": "accuracyCheck",
       "args": [
         {
-          "name": "jumpPtr",
-          "type": "label",
-          "optional": true
+          "name": "jumpPc",
+          "type": "number"
         }
       ]
     },
@@ -182,8 +180,8 @@
       "name": "setSecondaryEffect",
       "args": [
         {
-          "name": "fnPtr",
-          "type": "label"
+          "name": "effectPc",
+          "type": "number"
         },
         {
           "name": "chance",
@@ -192,14 +190,14 @@
       ]
     },
     {
-      "name": "secondaryEffect",
+      "name": "callSecondaryEffect",
       "args": []
     },
     {
       "name": "stat",
       "args": [
         {
-          "name": "statRef",
+          "name": "stat",
           "type": "identifier"
         },
         {
@@ -216,7 +214,7 @@
       "name": "ailment",
       "args": [
         {
-          "name": "ailmentRef",
+          "name": "ailment",
           "type": "identifier"
         }
       ]
@@ -225,7 +223,7 @@
       "name": "recoil",
       "args": [
         {
-          "name": "typeRef",
+          "name": "typ",
           "type": "identifier"
         }
       ]
@@ -234,7 +232,7 @@
       "name": "setSource",
       "args": [
         {
-          "name": "sourceRef",
+          "name": "source",
           "type": "identifier"
         }
       ]
@@ -243,7 +241,7 @@
       "name": "setTarget",
       "args": [
         {
-          "name": "targetRef",
+          "name": "target",
           "type": "identifier"
         }
       ]
@@ -256,7 +254,7 @@
       "name": "print",
       "args": [
         {
-          "name": "str",
+          "name": "msg",
           "type": "string"
         }
       ]
@@ -265,12 +263,12 @@
       "name": "jumpIfMove",
       "args": [
         {
-          "name": "identifier",
+          "name": "moveName",
           "type": "string"
         },
         {
-          "name": "jumpPtr",
-          "type": "label"
+          "name": "jumpPc",
+          "type": "number"
         }
       ]
     },
@@ -278,16 +276,33 @@
       "name": "jumpIfLastMove",
       "args": [
         {
-          "name": "ref",
+          "name": "actor",
           "type": "identifier"
         },
         {
-          "name": "identifier",
+          "name": "moveName",
           "type": "string"
         },
         {
-          "name": "jumpPtr",
-          "type": "label"
+          "name": "jumpPc",
+          "type": "number"
+        }
+      ]
+    },
+    {
+      "name": "jumpIfType",
+      "args": [
+        {
+          "name": "actor",
+          "type": "identifier"
+        },
+        {
+          "name": "typeName",
+          "type": "string"
+        },
+        {
+          "name": "jumpPc",
+          "type": "number"
         }
       ]
     },
@@ -295,8 +310,8 @@
       "name": "randCall",
       "args": [
         {
-          "name": "fnPtr",
-          "type": "label"
+          "name": "fnPc",
+          "type": "number"
         },
         {
           "name": "chance",
@@ -308,8 +323,8 @@
       "name": "randJump",
       "args": [
         {
-          "name": "jumpPtr",
-          "type": "label"
+          "name": "jumpPc",
+          "type": "number"
         },
         {
           "name": "chance",
@@ -349,7 +364,6 @@
     "clearOnSwitch"
   ],
   "identifiers": [
-    "missingIdentifier",
     "attacker",
     "attackerSide",
     "defender",
@@ -388,8 +402,8 @@
     "secondaryEffect",
     "secondaryEffectChance",
     "dontPrintFailed",
-    "variablesCount",
-    "missingVariable",
+    "memoryVariablesCount",
+    "upperMemoryStart",
     "sourceFlags",
     "targetFlags",
     "sourceStatus",

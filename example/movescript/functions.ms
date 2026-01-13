@@ -1,3 +1,7 @@
+expression_test:
+  print (33 - multiHitCounter + 22.0) * (14 / 5)
+  ret
+
 printStatUp1:
   print "{targetSide}'s {target}'s {affectedStat} rose!"
   ret

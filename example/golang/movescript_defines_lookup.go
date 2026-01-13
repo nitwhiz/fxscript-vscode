@@ -1,45 +1,34 @@
-//go:generate go run ../cmd/gen/ parser_defines_lookup ./parser_defines_lookup.tmpl ./parser_defines.go ./parser_defines_lookup.go
+//go:generate go run ../cmd/gen/ movescript_defines_lookup ./movescript_defines_lookup.tmpl ./movescript_defines.go ./movescript_defines_lookup.go
 
 package movescript
 
-var commandTypes = map[string]CommandType{
-	"none":               CmdNone,
-	"hostCall":           CmdHostCall,
-	"nop":                CmdNop,
-	"goto":               CmdGoto,
-	"set":                CmdSet,
-	"copy":               CmdCopy,
-	"setFlag":            CmdSetFlag,
-	"clearFlag":          CmdClearFlag,
-	"add":                CmdAdd,
-	"call":               CmdCall,
-	"ret":                CmdRet,
-	"jumpIf":             CmdJumpIf,
-	"jumpIfFlag":         CmdJumpIfFlag,
-	"jumpIfNotFlag":      CmdJumpIfNotFlag,
-	"damageCalc":         CmdDamageCalc,
-	"critCalc":           CmdCritCalc,
-	"typeCalc":           CmdTypeCalc,
-	"canceler":           CmdCanceler,
-	"accuracyCheck":      CmdAccuracyCheck,
-	"hpUpdate":           CmdHpUpdate,
-	"setSecondaryEffect": CmdSetSecondaryEffect,
-	"secondaryEffect":    CmdSecondaryEffect,
-	"stat":               CmdStat,
-	"ohKo":               CmdOhKo,
-	"ailment":            CmdAilment,
-	"recoil":             CmdRecoil,
-	"setSource":          CmdSetSource,
-	"setTarget":          CmdSetTarget,
-	"moveEnd":            CmdMoveEnd,
-	"print":              CmdPrint,
-	"jumpIfMove":         CmdJumpIfMove,
-	"randCall":           CmdRandCall,
-	"randJump":           CmdRandJump,
-	"damageSet":          CmdDamageSet,
-	"count":              CmdCount,
+import "github.com/nitwhiz/fxscript/fx"
+
+var commandTypes = fx.CommandTypeTable{
+	"damageCalc":          CmdDamageCalc,
+	"critCalc":            CmdCritCalc,
+	"typeCalc":            CmdTypeCalc,
+	"accuracyCheck":       CmdAccuracyCheck,
+	"hpUpdate":            CmdHpUpdate,
+	"setSecondaryEffect":  CmdSetSecondaryEffect,
+	"callSecondaryEffect": CmdCallSecondaryEffect,
+	"stat":                CmdStat,
+	"ohKo":                CmdOhKo,
+	"ailment":             CmdAilment,
+	"recoil":              CmdRecoil,
+	"setSource":           CmdSetSource,
+	"setTarget":           CmdSetTarget,
+	"moveEnd":             CmdMoveEnd,
+	"print":               CmdPrint,
+	"jumpIfMove":          CmdJumpIfMove,
+	"jumpIfLastMove":      CmdJumpIfLastMove,
+	"jumpIfType":          CmdJumpIfType,
+	"randCall":            CmdRandCall,
+	"randJump":            CmdRandJump,
+	"damageSet":           CmdDamageSet,
 }
-var flags = map[string]Flag{
+
+var flags = map[string]fx.Flag{
 	"moveMissed":              MoveMissed,
 	"turnCanceled":            TurnCanceled,
 	"sourceFainted":           SourceFainted,
@@ -61,8 +50,7 @@ var flags = map[string]Flag{
 	"clearOnSwitch":           ClearOnSwitch,
 }
 
-var identifiers = map[string]Identifier{
-	"missingIdentifier":  MissingIdentifier,
+var identifiers = map[string]fx.Identifier{
 	"attacker":           Attacker,
 	"attackerSide":       AttackerSide,
 	"defender":           Defender,
@@ -90,9 +78,11 @@ var identifiers = map[string]Identifier{
 	"recoilTypeMiss":     RecoilTypeMiss,
 	"recoilType25":       RecoilType25,
 	"damageTypeHp16":     DamageTypeHp16,
+	"damageTypeDouble":   DamageTypeDouble,
+	"defenderLastMove":   DefenderLastMove,
 }
 
-var variables = map[string]Variable{
+var variables = map[string]fx.Variable{
 	"multiHitCounter":           MultiHitCounter,
 	"multiHitSuccessCounter":    MultiHitSuccessCounter,
 	"affectedStat":              AffectedStat,
@@ -100,8 +90,8 @@ var variables = map[string]Variable{
 	"secondaryEffect":           SecondaryEffect,
 	"secondaryEffectChance":     SecondaryEffectChance,
 	"dontPrintFailed":           DontPrintFailed,
-	"variablesCount":            VariablesCount,
-	"missingVariable":           MissingVariable,
+	"memoryVariablesCount":      MemoryVariablesCount,
+	"upperMemoryStart":          UpperMemoryStart,
 	"sourceFlags":               SourceFlags,
 	"targetFlags":               TargetFlags,
 	"sourceStatus":              SourceStatus,

@@ -9,11 +9,83 @@ const fs = require('fs');
 const path = require('path');
 
 // Config
-// Interface names to read method comments from (defined in runtime.go)
-const RUNTIME_INTERFACE_NAME = 'RuntimeEnvironment';
-const BASE_RUNTIME_INTERFACE_NAME = 'baseRuntime';
+// Interface names to read method comments from (defined in env.go)
+const RUNTIME_INTERFACE_NAME = 'Environment';
 const OUTPUT_DIR_REL = path.join('data');
 const OUTPUT_FILENAME = 'movescript.json';
+
+const BASE_COMMANDS = [
+  { name: 'nop', args: [] },
+  { name: 'hostCall', args: [] },
+  {
+    name: 'goto',
+    args: [{ name: 'jumpPc', type: 'label' }]
+  },
+  {
+    name: 'set',
+    args: [
+      { name: 'variable', type: 'variable' },
+      { name: 'value', type: 'number' }
+    ]
+  },
+  {
+    name: 'copy',
+    args: [
+      { name: 'from', type: 'variable' },
+      { name: 'to', type: 'variable' }
+    ]
+  },
+  {
+    name: 'setFlag',
+    args: [
+      { name: 'variable', type: 'variable' },
+      { name: 'flag', type: 'flag' }
+    ]
+  },
+  {
+    name: 'clearFlag',
+    args: [
+      { name: 'variable', type: 'variable' },
+      { name: 'flag', type: 'flag' }
+    ]
+  },
+  {
+    name: 'add',
+    args: [
+      { name: 'variable', type: 'variable' },
+      { name: 'value', type: 'number' }
+    ]
+  },
+  {
+    name: 'call',
+    args: [{ name: 'addr', type: 'label' }]
+  },
+  { name: 'ret', args: [] },
+  {
+    name: 'jumpIf',
+    args: [
+      { name: 'variable', type: 'variable' },
+      { name: 'value', type: 'number' },
+      { name: 'jumpPc', type: 'label' }
+    ]
+  },
+  {
+    name: 'jumpIfFlag',
+    args: [
+      { name: 'variable', type: 'variable' },
+      { name: 'flag', type: 'flag' },
+      { name: 'jumpPc', type: 'label' }
+    ]
+  },
+  {
+    name: 'jumpIfNotFlag',
+    args: [
+      { name: 'variable', type: 'variable' },
+      { name: 'flag', type: 'flag' },
+      { name: 'jumpPc', type: 'label' }
+    ]
+  }
+];
 
 // Helpers
 function readFileText(filePath) {
@@ -46,9 +118,9 @@ function collectMethodMetadata(interfaceBody) {
   // Helper: map Go type + param name to ArgType
   const mapGoTypeToArg = (paramName, goType) => {
     const t = goType.trim();
-    if (t === 'Variable') return 'variable';
-    if (t === 'Flag') return 'flag';
-    if (t === 'Identifier') return 'identifier';
+    if (t === 'Variable' || t === 'fx.Variable') return 'variable';
+    if (t === 'Flag' || t === 'fx.Flag') return 'flag';
+    if (t === 'Identifier' || t === 'fx.Identifier') return 'identifier';
     if (t === 'string') return 'string';
     if (t === 'int' || t === 'uint' || t === 'int32' || t === 'int64' || t === 'uint32' || t === 'uint64') {
       // Heuristic: addresses/labels are ints named *ptr, *Ptr, jumpPtr, fnPtr, ptr
@@ -129,8 +201,8 @@ function collectMethodMetadata(interfaceBody) {
 }
 
 function extractMapEntries(src, varName) {
-  // Extract entries from: var <varName> = map[string]<Type>{ ... }
-  const re = new RegExp(`var\\s+${varName}\\s*=\\s*map\\[string]\\s*[^{]*{([\\s\\S]*?)}\\s*`, 'm');
+  // Extract entries from: var <varName> = map[string]<Type>{ ... } or var <varName> = <CustomType>{ ... }
+  const re = new RegExp(`var\\s+${varName}\\s*=\\s*(?:map\\[string]\\s*[^{]*|[A-Za-z0-9_\\.]+){([\\s\\S]*?)}\\s*`, 'm');
   const m = src.match(re);
   if (!m) return [];
   const body = m[1];
@@ -181,27 +253,21 @@ function extractConstStringValues(src) {
 }
 
 function main() {
-  const parserDefinesPath = process.argv[2];
+  const envFilePath = process.argv[2];
   const parserLookupPath = process.argv[3];
   const loggerTagsPath = process.argv[4];
-  if (!parserDefinesPath || !parserLookupPath || !loggerTagsPath) {
-    console.error('Usage: node scripts/generate-movescript-json.js <runtime.go> <parser_defines_lookup.go> <logger_tags.go>');
+  if (!envFilePath || !parserLookupPath || !loggerTagsPath) {
+    console.error('Usage: node scripts/generate-movescript-json.js <env.go> <parser_defines_lookup.go> <logger_tags.go>');
     process.exit(1);
   }
 
-  const runtimeSrc = readFileText(path.resolve(process.cwd(), parserDefinesPath));
+  const envSrc = readFileText(path.resolve(process.cwd(), envFilePath));
   const parserSrc = readFileText(path.resolve(process.cwd(), parserLookupPath));
   const loggerTagsSrc = readFileText(path.resolve(process.cwd(), loggerTagsPath));
 
-  // Parse method comments from both RuntimeEnvironment and baseRuntime interfaces
-  const runtimeIfaceBody = extractInterfaceBody(runtimeSrc, RUNTIME_INTERFACE_NAME);
-  const baseRuntimeIfaceBody = extractInterfaceBody(runtimeSrc, BASE_RUNTIME_INTERFACE_NAME);
-  const runtimeMeta = collectMethodMetadata(runtimeIfaceBody);
-  const baseMeta = collectMethodMetadata(baseRuntimeIfaceBody);
-
-  // Merge metadata: prefer RuntimeEnvironment over baseRuntime on conflicts
-  const methodMeta = new Map(baseMeta);
-  for (const [k, v] of runtimeMeta.entries()) methodMeta.set(k, v);
+  // Parse method comments from Environment interface
+  const envIfaceBody = extractInterfaceBody(envSrc, RUNTIME_INTERFACE_NAME);
+  const methodMeta = collectMethodMetadata(envIfaceBody);
 
   // Extract data from Go maps
   const cmdEntries = extractMapEntries(parserSrc, 'commandTypes');
@@ -217,10 +283,6 @@ function main() {
     tagSet.add(t);
   }
 
-  // Build commands array: { name, detail?, args? }
-  // Special cases: ignore synthetic entries used differently in runtime
-  // - "count" (CmdCount)
-  // - "none"  (CmdNone)
   // To preserve user-specified fields like `optional` on args, read existing output (if any)
   let existing = {};
   try {
@@ -240,34 +302,40 @@ function main() {
     existing = {};
   }
 
-  const commands = cmdEntries
-    .filter(({ key }) => key !== 'count' && key !== 'none')
-    .map(({ key, value }) => {
-      // value is like CmdNop; use it to find a comment in interface
-      const methodName = value.replace(/\s+/g, '');
-      const meta = methodMeta.get(methodName) || {};
-      const detail = meta.detail || '';
-      // Start from generated args, then merge back any existing user-set properties (like optional)
-      const genArgs = Array.isArray(meta.args) ? meta.args : [];
-      const prevArgs = existing[key];
-      const args = genArgs.map((ga, idx) => {
-        const prev = Array.isArray(prevArgs) ? prevArgs[idx] : undefined;
-        if (prev && typeof prev === 'object') {
-          const out = { ...ga };
-          // Preserve boolean optional exactly as specified if present
-          if (Object.prototype.hasOwnProperty.call(prev, 'optional')) {
-            out.optional = !!prev.optional;
-          }
-          return out;
+  const commands = [...BASE_COMMANDS];
+
+  for (const { key, value } of cmdEntries) {
+    if (key === 'count' || key === 'none') continue;
+    // Skip base commands that are already in BASE_COMMANDS
+    if (BASE_COMMANDS.some(bc => bc.name === key)) continue;
+
+    const methodName = value.replace(/\s+/g, '');
+    const meta = methodMeta.get(methodName);
+    // If we can't find it in the interface, skip it (unless it's a base command, but we already handled those)
+    if (!meta) {
+      // console.warn(`Warning: command ${key} (${methodName}) not found in Environment interface, skipping.`);
+      continue;
+    }
+
+    const detail = meta.detail || '';
+    const genArgs = Array.isArray(meta.args) ? meta.args : [];
+    const prevArgs = existing[key];
+    const args = genArgs.map((ga, idx) => {
+      const prev = Array.isArray(prevArgs) ? prevArgs[idx] : undefined;
+      if (prev && typeof prev === 'object') {
+        const out = { ...ga };
+        if (Object.prototype.hasOwnProperty.call(prev, 'optional')) {
+          out.optional = !!prev.optional;
         }
-        return ga;
-      });
-      const obj = { name: key };
-      // Always include args (explicitly empty array when no args)
-      obj.args = args;
-      if (detail) obj.detail = detail;
-      return obj;
+        return out;
+      }
+      return ga;
     });
+
+    const obj = { name: key, args };
+    if (detail) obj.detail = detail;
+    commands.push(obj);
+  }
 
   const result = { commands, flags, identifiers, variables, string_tags: [...tagSet] };
 
