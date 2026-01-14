@@ -80,6 +80,7 @@ _razor-wind:
 # Increases the user's Attack stat by two stages.
 _swords-dance:
   canceler
+  accuracyCheck
   setTarget attacker
   call incAttack2
   goto end
@@ -105,8 +106,7 @@ _wing-attack:
 # May fail if the user's level is lower than the target's, with failure chance calculated as floor(Leveltarget/4)/(Leveltarget+Leveluser+1) in Generation I and approximated as floor(Leveltarget/4)/(Leveltarget+Leveluser) in Generation III
 # Fails when used against Pokémon with the Ability Suction Cups or when they are rooted by Ingrain (Generation III)
 _whirlwind:
-  print msgNothingHappens
-  goto end
+  goto _notImplemented
 
 # Deals damage on the second turn after being selected
 # Becomes semi-invulnerable on the first turn, avoiding all attacks except Bide and Swift
@@ -375,7 +375,8 @@ _ember:
 
 # Deals damage and has a 10% chance to burn the target
 _flamethrower:
-  goto _notImplemented
+  setSecondaryEffect inflictBurn 10
+  goto effectHit
 
 # Prevents the user's stats from being lowered by opponents until the user switches out
 # Also prevents stat reductions caused by damaging moves
@@ -384,42 +385,45 @@ _mist:
 
 # Deals damage and has no secondary effect
 _water-gun:
-  goto _notImplemented
+  goto effectHit
 
 # Deals damage using Hydro Pump's base power of 120 and has no secondary effect
 _hydro-pump:
-  goto _notImplemented
+  goto effectHit
 
 # Deals damage with power 95
-# Can hit during the target's semi-invulnerable turn of Dive, dealing double damage
-# In Double or Triple Battles, hits all adjacent opposing Pokémon
 _surf:
-  goto _notImplemented
+  goto effectHit
 
 # Deals damage and has a 10% chance of freezing the target
 _ice-beam:
-  goto _notImplemented
+  setSecondaryEffect inflictFreeze 10
+  goto effectHit
 
 # Deals damage with 70% accuracy
 # 10% chance to freeze the target
 # Hits both opponents in a Double Battle
 _blizzard:
-  goto _notImplemented
+  setSecondaryEffect inflictFreeze 10
+  goto effectHit
 
 # Deals damage
 # 10% chance to confuse the target
 _psybeam:
-  goto _notImplemented
+  setSecondaryEffect inflictConfusion 10
+  goto effectHit
 
 # Deals damage with 100% accuracy
 # 10% chance to lower the target's Speed by one stage
 _bubble-beam:
-  goto _notImplemented
+  setSecondaryEffect decSpeed1 10
+  goto effectHit
 
 # Deals damage and has an 85/256 (~33.2%) chance of lowering the target's Attack by one stage
 # No additional failure chance when used by an in-game opponent
 _aurora-beam:
-  goto _notImplemented
+  setSecondaryEffect decAttack1 33
+  goto effectHit
 
 # Deals damage; after use, the user must recharge on the next turn unless the attack misses, breaks a substitute, knocks out the target, or the user is targeted by a binding move (even if it misses) before the recharge turn.
 # If the move misses or the battle ends that turn, no recharge is required.
@@ -428,12 +432,12 @@ _hyper-beam:
 
 # Deals damage and can hit non-adjacent opponents in Triple Battles
 _peck:
-  goto _notImplemented
+  goto effectHit
 
 # Deals damage and has no secondary effect
 # Can hit non-adjacent opponents in Triple Battles
 _drill-peck:
-  goto _notImplemented
+  goto effectHit
 
 # Deals damage and inflicts recoil equal to 25% of the damage dealt
 # If the user moves first and faints from recoil, the target does not attack that round
@@ -463,7 +467,7 @@ _seismic-toss:
 
 # Deals damage with no secondary effect
 _strength:
-  goto _notImplemented
+  goto effectHit
 
 # Deals damage and restores up to 50% of the damage dealt as HP (minimum 1 HP), up to the user's maximum HP
 # If the target has a substitute, the move will miss in Japanese Generation I and all Stadium and Generation II games; in localized Generation I games it will break the substitute but restore no HP
@@ -483,13 +487,17 @@ _leech-seed:
 
 # Increases the user's Special Attack by one stage.
 _growth:
-  goto _notImplemented
+  canceler
+  accuracyCheck
+  setTarget attacker
+  call incSpecialAttack1
+  goto end
 
 # Deals damage and has an increased critical-hit ratio
 # In double battles it can target all adjacent opposing Pokémon
 # Each target's critical-hit chance is evaluated separately
 _razor-leaf:
-  goto _notImplemented
+  goto effectHit
 
 # Deals damage on the second turn after charging
 # Requires one turn to charge unless harsh sunlight is active, allowing immediate use
@@ -502,7 +510,10 @@ _solar-beam:
 # Poisons the target
 # Does not affect Steel-type or Poison-type Pokémon
 _poison-powder:
-  goto _notImplemented
+  canceler
+  accuracyCheck
+  ailment ailmentPoison
+  goto end
 
 # Does not deal damage
 # Paralyzes the target
@@ -526,10 +537,12 @@ _petal-dance:
   goto _notImplemented
 
 # Lowers the target's Speed by one stage
-# 25% chance to fail when used by an opposing Pokémon outside the Battle Tower
 # Targets all adjacent opposing Pokémon in double battles
 _string-shot:
-  goto _notImplemented
+  canceler
+  accuracyCheck
+  call decSpeed1
+  goto end
 
 # Deals damage, inflicting exactly 40 HP if it hits
 # No secondary effects
@@ -549,13 +562,17 @@ _fire-spin:
 # 10% chance to paralyze the target
 # Cannot paralyze Electric-type Pokémon
 _thunder-shock:
-  goto _notImplemented
+  # todo: Cannot paralyze Electric-type Pokémon
+  setSecondaryEffect inflictParalysis 10
+  goto effectHit
 
 # Deals damage
 # 10% chance to paralyze the target
 # Cannot paralyze Electric-type Pokémon
 _thunderbolt:
-  goto _notImplemented
+  # todo: Cannot paralyze Electric-type Pokémon
+  setSecondaryEffect inflictParalysis 10
+  goto effectHit
 
 # No damage dealt
 # 100% accuracy
@@ -568,16 +585,20 @@ _thunder-wave:
 
 # Deals damage and has a 10% chance to paralyze the target; cannot paralyze Electric-type Pokémon
 _thunder:
-  goto _notImplemented
+  # todo: cannot paralyze Electric-type Pokémon
+  # jumpIfType
+  setSecondaryEffect inflictParalysis 10
+  goto effectHit
 
 # Deals damage with 65% accuracy
 _rock-throw:
-  goto _notImplemented
+  goto effectHit
 
 # Deals damage
 # Can hit a Pokémon during the semi-invulnerable turn of Dig; if it does, its power is doubled for that Pokémon
 _earthquake:
-  goto _notImplemented
+  jumpIfLastMove target "dig" effectDoubleDamageHit
+  goto effectHit
 
 # Deals damage equal to the target's current HP (instant KO)
 # Accuracy is calculated as (Level_user - Level_target + 30)%; starts at 30% when levels are equal and increases by 1% per level difference, reaching 100% when the user is 70 or more levels higher
@@ -606,29 +627,40 @@ _toxic:
 
 # Deals damage and has a 10% chance to confuse the target
 _confusion:
-  goto _notImplemented
+  setSecondaryEffect inflictConfusion 10
+  goto effectHit
 
 # Deals damage
 # 10% chance to lower the target's Special Defense by one stage
 # No additional failure chance when used by an in-game opponent
 _psychic:
-  goto _notImplemented
+  setSecondaryEffect decSpecialDefense1 10
+  goto effectHit
 
 # Does not deal damage; 60% accuracy
 # Puts the target to sleep
 # In Generation I, can affect a target behind a substitute
-# In Generation II, when used by in-game opponents outside the Battle Tower it has an additional 25% chance to fail
-# In Generation III, fails on Pokémon with Insomnia or Vital Spirit
 _hypnosis:
-  goto _notImplemented
+  canceler
+  accuracyCheck
+  ailment ailmentSleep
+  goto end
 
 # Does not deal damage; raises user's Attack by one stage
 _meditate:
-  goto _notImplemented
+  canceler
+  accuracyCheck
+  setTarget attacker
+  call incAttack1
+  goto end
 
 # Increases the user's Speed by one stage
 _agility:
-  goto _notImplemented
+  canceler
+  accuracyCheck
+  setTarget attacker
+  call incSpeed1
+  goto end
 
 # Deals damage with +1 priority
 # Priority remains unchanged while the user is asleep or frozen and is only reset after the user wakes up, is defrosted, or switches out
@@ -776,15 +808,18 @@ _egg-bomb:
 # 30% chance to paralyze the target
 # Can paralyze Ghost-type Pokémon
 _lick:
-  goto _notImplemented
+  setSecondaryEffect inflictParalysis 30
+  goto effectHit
 
 # Deals damage and has a 40% chance to poison the target
 _smog:
-  goto _notImplemented
+  setSecondaryEffect inflictPoison 40
+  goto effectHit
 
 # Deals damage and has a 30% chance to poison the target
 _sludge:
-  goto _notImplemented
+  setSecondaryEffect inflictPoison 30
+  goto effectHit
 
 # Deals damage and has a 10% chance to cause flinching
 # Cannot cause flinching if the target has a substitute
@@ -793,12 +828,14 @@ _bone-club:
 
 # Deals damage and has a 10% chance to burn the target
 _fire-blast:
-  goto _notImplemented
+  setSecondaryEffect inflictBurn 10
+  goto effectHit
 
 # Deals damage
 # 20% chance to cause the target to flinch
 _waterfall:
-  goto _notImplemented
+  setSecondaryEffect inflictFlinching 20
+  goto effectHit
 
 # Deals damage for 2-5 turns; the duration is randomly chosen (37.5% chance for 2 or 3 turns, 12.5% chance for 4 or 5 turns) and each strike deals equal damage
 # Only the first hit can score a critical hit; all subsequent hits deal the same damage as the first
@@ -812,7 +849,6 @@ _clamp:
 
 # Deals damage and always hits, ignoring accuracy checks
 # Can hit during the semi-invulnerable turn of moves such as Dig or Fly
-# In multi-target battles it strikes all adjacent opposing Pokémon
 _swift:
   goto _notImplemented
 
@@ -838,12 +874,18 @@ _constrict:
 
 # Does not deal damage; raises the user's Special Defense by two stages
 _amnesia:
-  goto _notImplemented
+  canceler
+  accuracyCheck
+  setTarget attacker
+  call incSpecialDefense2
+  goto end
 
 # Decreases target's accuracy by one stage
-# Has 25% chance to fail when used by in-game opponents outside the Battle Tower (Generations I-II)
 _kinesis:
-  goto _notImplemented
+  canceler
+  accuracyCheck
+  call decAccuracy1
+  goto end
 
 # Restores up to 50% of the user's maximum HP (rounded down); does not deal damage
 # Fails if the user's current HP is already at its maximum
@@ -859,9 +901,11 @@ _high-jump-kick:
 
 # Paralyzes the target with 75% accuracy
 # Cannot affect Ghost-type Pokémon unless Foresight or Odor Sleuth is active
-# In Generation II, when used by an opponent outside the Battle Tower, there is a 25% chance of failing in addition to normal miss
 _glare:
-  goto _notImplemented
+  canceler
+  accuracyCheck
+  ailment ailmentParalysis
+  goto end
 
 # Deals damage only if the target is asleep
 # Restores HP equal to 50% of the damage dealt, up to the user's maximum HP (1 HP restores 1 HP)
@@ -916,17 +960,22 @@ _transform:
 # 33.2% chance to lower the target's Speed by one stage
 # In double battles, hits both opposing Pokémon
 _bubble:
-  goto _notImplemented
+  setSecondaryEffect decSpeed1 33
+  goto effectHit
 
 # Deals damage
 # 20% chance to confuse the target
 _dizzy-punch:
-  goto _notImplemented
+  setSecondaryEffect inflictConfusion 20
+  goto effectHit
 
 # Puts the target to sleep
 # In Generation I, can affect a target behind a substitute
 _spore:
-  goto _notImplemented
+  canceler
+  accuracyCheck
+  ailment ailmentSleep
+  goto end
 
 # Does not deal damage; reduces target's accuracy by one stage
 # 70% accuracy in Generation I-II
@@ -949,7 +998,11 @@ _splash:
 
 # Raises user's Defense by two stages without dealing damage
 _acid-armor:
-  goto _notImplemented
+  canceler
+  accuracyCheck
+  setTarget attacker
+  call incDefense2
+  goto end
 
 # Deals damage with 90 base power and 85% accuracy
 # Has an increased critical hit ratio
@@ -990,15 +1043,21 @@ _rest:
 # 30% chance to cause each target to flinch
 # Targets all adjacent opponents
 _rock-slide:
-  goto _notImplemented
+  setSecondaryEffect inflictFlinching 30
+  goto effectHit
 
 # Deals damage and has a 10% chance of causing the target to flinch
 _hyper-fang:
-  goto _notImplemented
+  setSecondaryEffect inflictFlinching 10
+  goto effectHit
 
 # Increases the user's Attack by one stage
 _sharpen:
-  goto _notImplemented
+  canceler
+  accuracyCheck
+  setTarget attacker
+  call incAttack1
+  goto end
 
 # Changes the user's type to match the target's current type(s)
 # Restores the user's original type when switched out, fainted, or battle ends
@@ -1007,7 +1066,7 @@ _conversion:
 
 # Deals damage and has no secondary effect
 _tri-attack:
-  goto _notImplemented
+  goto effectHit
 
 # Deals damage equal to 50% of the target's current HP (rounded down), minimum 1 HP
 # Damage cannot be prevented by type immunities

@@ -1,5 +1,5 @@
 {
-  "name": "arena-fxscript",
+  "name": "fxscript-vscode",
   "displayName": "FXScript",
   "description": "Syntax highlighting and IntelliSense for FXScript (*.fx).",
   "version": "0.1.0",
@@ -64,6 +64,19 @@
         "scopeName": "source.fxscript",
         "path": "./syntaxes/fxscript.tmLanguage.json"
       }
+    ],
+    "semanticTokenScopes": [
+      {
+        "language": "fxscript",
+        "scopes": {
+          "macro": [ "entity.name.function.macro.fxscript" ],
+          "label": [ "entity.name.type.label.fxscript" ],
+          "regexp": [ "variable.other.enummember.fxscript" ],
+          "function": [ "support.function.command.fxscript" ],
+          "variable": [ "variable.other.enummember.fxscript" ],
+          "parameter": [ "variable.other.enummember.fxscript" ]
+        }
+      }
     ]
   },
   "activationEvents": [
@@ -77,9 +90,9 @@
     "vscode:prepublish": "tsc -p ./",
     "build": "tsc -p ./",
     "watch": "tsc -watch -p ./",
-    "package": "vsce package -o arena-fxscript.vsix",
-    "vscode:install:mac": "'/Applications/Visual Studio Code.app/Contents/Resources/app/bin/code' --install-extension arena-fxscript.vsix",
-    "vscode:install": "code --install-extension arena-fxscript.vsix"
+    "package": "vsce package -o fxscript.vsix",
+    "vscode:install:mac": "'/Applications/Visual Studio Code.app/Contents/Resources/app/bin/code' --install-extension fxscript.vsix",
+    "vscode:install": "code --install-extension fxscript.vsix"
   },
   "devDependencies": {
     "@types/node": "^24.10.4",

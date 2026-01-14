@@ -1,9 +1,3 @@
-expression_test:
-  print (33 - multiHitCounter + 22.0) * (14 / 5)
-  set multiHitCounter, 1
-  nop 12 - multiHitCounter, -5
-  ret
-
 printStatUp1:
   print "{targetSide}'s {target}'s {affectedStat} rose!"
   ret
@@ -13,6 +7,7 @@ printStatUp2:
   ret
 
 printStatDown1:
+  # todo: why does this know `affectedStat`?
   print "{targetSide}'s {target}'s {affectedStat} fell!"
   ret
 
@@ -35,8 +30,28 @@ incAttack1:
   call printStatUp1
   ret
 
+incSpeed1:
+  stat statSpeed +1
+  call printStatUp1
+  ret
+
 incAttack2:
   stat statAttack +1
+  call printStatUp1
+  ret
+
+incDefense2:
+  stat statDefense +2
+  call printStatUp2
+  ret
+
+incSpecialAttack1:
+  stat statSpecialAttack +1
+  call printStatUp1
+  ret
+
+incSpecialDefense2:
+  stat statSpecialDefense +2
   call printStatUp2
   ret
 
@@ -53,6 +68,22 @@ decDefense2:
 decAccuracy1:
   stat statAccuracy -1
   call printStatDown1
+  ret
+
+decSpeed1:
+  stat statSpeed -1
+  call printStatDown1
+  ret
+
+decSpeed2:
+  stat statSpeed -2
+  call printStatDown2
+  ret
+
+decSpecialDefense1:
+  stat statSpecialDefense -1
+  call printStatDown1
+  ret
 
 # todo: inflictWrap?
 

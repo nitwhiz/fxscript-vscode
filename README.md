@@ -1,6 +1,6 @@
-# Arena FXScript (VS Code)
+# FXScript (VS Code)
 
-This VS Code extension adds language support for Arena FXScript files (`*.fx`).
+This VS Code extension adds language support for FXScript files (`*.fx`).
 
 ## Generate FXScript data
 

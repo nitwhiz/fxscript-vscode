@@ -1,0 +1,289 @@
+{
+  "commands": [
+    {
+      "name": "damageCalc",
+      "args": [
+        {
+          "name": "power",
+          "type": "number",
+          "optional": true
+        }
+      ]
+    },
+    {
+      "name": "critCalc",
+      "args": []
+    },
+    {
+      "name": "typeCalc",
+      "args": []
+    },
+    {
+      "name": "accuracyCheck",
+      "args": [
+        {
+          "name": "jumpPc",
+          "type": "label",
+          "optional": true
+        }
+      ]
+    },
+    {
+      "name": "hpUpdate",
+      "args": []
+    },
+    {
+      "name": "setSecondaryEffect",
+      "args": [
+        {
+          "name": "effectPc",
+          "type": "label"
+        },
+        {
+          "name": "chance",
+          "type": "number"
+        }
+      ]
+    },
+    {
+      "name": "callSecondaryEffect",
+      "args": []
+    },
+    {
+      "name": "stat",
+      "args": [
+        {
+          "name": "stat",
+          "type": "identifier"
+        },
+        {
+          "name": "change",
+          "type": "number"
+        }
+      ]
+    },
+    {
+      "name": "ohKo",
+      "args": []
+    },
+    {
+      "name": "ailment",
+      "args": [
+        {
+          "name": "ailment",
+          "type": "identifier"
+        }
+      ]
+    },
+    {
+      "name": "recoil",
+      "args": [
+        {
+          "name": "typ",
+          "type": "identifier"
+        }
+      ]
+    },
+    {
+      "name": "setSource",
+      "args": [
+        {
+          "name": "source",
+          "type": "identifier"
+        }
+      ]
+    },
+    {
+      "name": "setTarget",
+      "args": [
+        {
+          "name": "target",
+          "type": "identifier"
+        }
+      ]
+    },
+    {
+      "name": "moveEnd",
+      "args": []
+    },
+    {
+      "name": "print",
+      "args": [
+        {
+          "name": "msg",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "jumpIfMove",
+      "args": [
+        {
+          "name": "moveName",
+          "type": "string"
+        },
+        {
+          "name": "jumpPc",
+          "type": "label"
+        }
+      ]
+    },
+    {
+      "name": "jumpIfLastMove",
+      "args": [
+        {
+          "name": "actor",
+          "type": "identifier"
+        },
+        {
+          "name": "moveName",
+          "type": "string"
+        },
+        {
+          "name": "jumpPc",
+          "type": "label"
+        }
+      ]
+    },
+    {
+      "name": "jumpIfType",
+      "args": [
+        {
+          "name": "actor",
+          "type": "identifier"
+        },
+        {
+          "name": "typeName",
+          "type": "string"
+        },
+        {
+          "name": "jumpPc",
+          "type": "label"
+        }
+      ]
+    },
+    {
+      "name": "randCall",
+      "args": [
+        {
+          "name": "fnPc",
+          "type": "label"
+        },
+        {
+          "name": "chance",
+          "type": "number"
+        }
+      ]
+    },
+    {
+      "name": "randJump",
+      "args": [
+        {
+          "name": "jumpPc",
+          "type": "label"
+        },
+        {
+          "name": "chance",
+          "type": "number"
+        }
+      ]
+    },
+    {
+      "name": "damageSet",
+      "args": [
+        {
+          "name": "damageType",
+          "type": "identifier"
+        }
+      ]
+    }
+  ],
+  "flags": [
+    "moveMissed",
+    "turnCanceled",
+    "sourceFainted",
+    "targetFainted",
+    "mustSwitchToRandom",
+    "mustSwitchToAny",
+    "semiInvulnerable",
+    "secondTurn",
+    "moveLocked",
+    "disableLastMove",
+    "hasDisabledMove",
+    "monsterStatus1Burn",
+    "monsterStatus1Poison",
+    "monsterStatus1Paralysis",
+    "monsterStatus1Sleep",
+    "monsterStatus1Freeze",
+    "monsterStatus2Confusion",
+    "monsterStatus2Flinching",
+    "clearOnSwitch"
+  ],
+  "identifiers": [
+    "attacker",
+    "attackerSide",
+    "defender",
+    "defenderSide",
+    "source",
+    "sourceSide",
+    "target",
+    "targetSide",
+    "currentMove",
+    "statAttack",
+    "statDefense",
+    "statSpecialAttack",
+    "statSpecialDefense",
+    "statSpeed",
+    "statAccuracy",
+    "statEvasion",
+    "ailmentBurn",
+    "ailmentFreeze",
+    "ailmentParalysis",
+    "ailmentPoison",
+    "ailmentSleep",
+    "ailmentFlinching",
+    "ailmentConfusion",
+    "ailmentWrapped",
+    "recoilTypeMiss",
+    "recoilType25",
+    "damageTypeHp16",
+    "damageTypeDouble",
+    "defenderLastMove"
+  ],
+  "variables": [
+    "multiHitCounter",
+    "multiHitSuccessCounter",
+    "affectedStat",
+    "moveResult",
+    "secondaryEffect",
+    "secondaryEffectChance",
+    "dontPrintFailed",
+    "memoryVariablesCount",
+    "upperMemoryStart",
+    "sourceFlags",
+    "targetFlags",
+    "sourceStatus",
+    "targetStatus",
+    "attackerStatus",
+    "attackerStatus1Turns",
+    "attackerConfusionTurns",
+    "attackerDisabledMoveTurns",
+    "attackerWrappedTurns"
+  ],
+  "string_tags": [
+    "affectedStat",
+    "side",
+    "attackerSide",
+    "defenderSide",
+    "sourceSide",
+    "targetSide",
+    "attacker",
+    "defender",
+    "source",
+    "target",
+    "currentMove",
+    "targetDisabledMove",
+    "targetWrappedByMove",
+    "multiHitSuccessCounter"
+  ]
+}

@@ -1,12 +1,13 @@
 {
   "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
-  "name": "Arena FXScript",
+  "name": "FXScript",
   "scopeName": "source.fxscript",
   "patterns": [
     { "include": "#comments" },
     { "include": "#directives" },
     { "include": "#labels" },
     { "include": "#macro-block" },
+    { "include": "#macro-calls" },
     { "include": "#keywords" },
     { "include": "#strings" },
     { "include": "#numbers" },
@@ -24,18 +25,26 @@
     "directives": {
       "patterns": [
         {
-          "name": "keyword.control.directive.fxscript",
-          "match": "(^|\\s)(@include)\\b"
+          "match": "(?i)^\\s*(@include)\\b\\s+([A-Za-z0-9_.-]+)",
+          "captures": {
+            "1": { "name": "keyword.control.directive.fxscript" }
+          }
+        },
+        {
+          "match": "(?i)^\\s*(const)\\b\\s+([A-Za-z_][A-Za-z0-9_-]*)",
+          "captures": {
+            "1": { "name": "keyword.other.fxscript" }
+          }
         }
       ]
     },
     "labels": {
       "patterns": [
         {
-          "name": "meta.label.fxscript",
+          "name": "entity.name.type.label.fxscript",
           "match": "^(\\s*)([A-Za-z_][A-Za-z0-9_-]*)(\\s*:)",
           "captures": {
-            "2": { "name": "entity.name.function.label.fxscript" },
+            "2": { "name": "entity.name.type.label.fxscript" },
             "3": { "name": "punctuation.separator.label.fxscript" }
           }
         }
@@ -44,12 +53,12 @@
     "macro-block": {
       "patterns": [
         {
-          "begin": "^(\\s*)(macro)\\b\\s+([A-Za-z_][A-Za-z0-9_-]*)",
+          "begin": "(?i)^(\\s*)(macro)\\b\\s+([A-Za-z_][A-Za-z0-9_-]*)",
           "beginCaptures": {
             "2": { "name": "storage.type.macro.fxscript" },
             "3": { "name": "entity.name.function.macro.fxscript" }
           },
-          "end": "^(\\s*)(endmacro)\\b",
+          "end": "(?i)^(\\s*)(endmacro)\\b",
           "endCaptures": {
             "2": { "name": "storage.type.macro.fxscript" }
           },
@@ -57,6 +66,7 @@
           "patterns": [
             { "include": "#comments" },
             { "include": "#keywords" },
+            { "include": "#macro-calls" },
             { "include": "#commands" },
             { "include": "#strings" },
             { "include": "#numbers" }
@@ -64,19 +74,27 @@
         }
       ]
     },
+    "macro-calls": {
+      "patterns": [
+        {
+          "name": "entity.name.function.macro.fxscript",
+          "match": "(?i)^(\\s*)(canceler|moveHit|randMultiHitCounter2To5)\\b"
+        }
+      ]
+    },
     "keywords": {
       "patterns": [
         {
           "name": "keyword.control.flow.fxscript",
-          "match": "(^|\\s)(call|ret|goto)\\b"
+          "match": "(?i)(^|\\s)(call|ret|goto)\\b"
         },
         {
           "name": "storage.type.macro.fxscript",
-          "match": "(^|\\s)(macro|endmacro)\\b"
+          "match": "(?i)(^|\\s)(macro|endmacro)\\b"
         },
         {
-          "name": "storage.type.const.fxscript",
-          "match": "(^|\\s)(const)\\b"
+          "name": "keyword.other.fxscript",
+          "match": "(?i)(^|\\s)(const)\\b"
         }
       ]
     },
@@ -107,12 +125,31 @@
         }
       ]
     },
+    "variables": {
+      "patterns": [
+        {
+          "name": "variable.other.enummember.fxscript",
+          "match": "\\b[A-Za-z_][A-Za-z0-9_-]*\\b"
+        }
+      ]
+    },
+    "const-usage": {
+      "patterns": [
+        {
+          "match": "\\b[A-Za-z_][A-Za-z0-9_-]*\\b"
+        }
+      ]
+    },
     "commands": {
       "patterns": [
         {
-          "name": "support.function.command.fxscript",
-          "match": "^(\\s*)(?:(?!macro|endmacro|const|@include|call|ret|goto)[A-Za-z_][A-Za-z0-9_-]*)\\b"
+          "include": "#const-usage"
         },
+        {
+          "name": "support.function.command.fxscript",
+          "match": "(?i)^(\\s*)(?:(?!macro|endmacro|const|@include|call|ret|goto)[A-Za-z_][A-Za-z0-9_-]*)\\b"
+        },
+        { "include": "#variables" },
         {
           "name": "punctuation.separator.comma.fxscript",
           "match": ","

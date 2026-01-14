@@ -2,7 +2,7 @@ import * as vscode from 'vscode';
 import { SymbolCache } from './symbols';
 import { stripCommentAndMaskStrings, readFXScript, tokenize, Token } from './util';
 
-const tokenTypes = ['class', 'variable', 'keyword', 'parameter', 'type', 'macro', 'function', 'constant', 'number', 'regexp'];
+const tokenTypes = ['variable', 'keyword', 'parameter', 'type', 'macro', 'function', 'number', 'regexp', 'label'];
 const tokenModifiers = ['declaration', 'documentation'];
 export const legend = new vscode.SemanticTokensLegend(tokenTypes, tokenModifiers);
 
@@ -18,6 +18,7 @@ export function registerSemanticTokenProvider(context: vscode.ExtensionContext, 
           const variablesSet = new Set(config.variables || []);
 
           const builder = new vscode.SemanticTokensBuilder(legend);
+
           const workspaceLabels = symbolCache.workspaceLabels;
           const workspaceSymbols = symbolCache.symbols;
 
@@ -30,85 +31,153 @@ export function registerSemanticTokenProvider(context: vscode.ExtensionContext, 
             if (allTokens.length === 0) continue;
 
             // Group tokens by commas and spaces to handle multiple commands per line
-            const commandGroups: { tokens: Token[], cmdName?: string }[] = [];
+            const commandGroups: { tokens: Token[], groupIdx: number }[] = [];
             let currentGroup: Token[] = [];
+
+            const isCommandStartToken = (t: Token) => {
+              if (!t) return false;
+              const text = t.text.toLowerCase();
+              if (config.commands.some(c => c.name.toLowerCase() === text)) return true;
+              if (['call', 'goto', 'ret', '@include', 'macro', 'const', 'endmacro'].includes(text)) return true;
+              if (workspaceSymbols.macros.some(m => m.toLowerCase() === text)) return true;
+              return false;
+            };
 
             for (let j = 0; j < allTokens.length; j++) {
               const token = allTokens[j];
+              const text = token.text.toLowerCase();
               if (token.text === ',') {
                 const nextToken = allTokens[j + 1];
 
-                if (nextToken && (config.commands.some(c => c.name === nextToken.text) || nextToken.text === '@include' || nextToken.text === 'macro' || nextToken.text === 'const' || nextToken.text === 'endmacro' || workspaceSymbols.macros.includes(nextToken.text)) && currentGroup.length > 0) {
-                  commandGroups.push({ tokens: currentGroup, cmdName: currentGroup[0].text });
+                if (isCommandStartToken(nextToken) && currentGroup.length > 0) {
+                  commandGroups.push({ tokens: currentGroup, groupIdx: commandGroups.length });
                   currentGroup = [];
                 } else {
                   currentGroup.push(token);
                 }
+              } else if (token.text.endsWith(':') && currentGroup.length > 0) {
+                commandGroups.push({ tokens: currentGroup, groupIdx: commandGroups.length });
+                currentGroup = [token];
               } else {
                 currentGroup.push(token);
               }
             }
             if (currentGroup.length > 0) {
-              commandGroups.push({ tokens: currentGroup, cmdName: currentGroup[0].text });
+              commandGroups.push({ tokens: currentGroup, groupIdx: commandGroups.length });
             }
+
+            const lineTokens: { start: number, length: number, type: number }[] = [];
 
             for (const group of commandGroups) {
               const tokens = group.tokens;
               if (tokens.length === 0) continue;
 
               const firstToken = tokens[0];
-              const cmdName = firstToken.text;
+              const cmdNameRaw = firstToken.text;
+              const cmdName = cmdNameRaw.toLowerCase();
 
               let idx = 0;
               // Check for label definition
-              if (cmdName.endsWith(':') && firstToken.start === allTokens[0].start) {
-                const labelName = cmdName.slice(0, -1);
-                builder.push(i, firstToken.start, labelName.length, tokenTypes.indexOf('class'), 0);
+              if (cmdNameRaw.endsWith(':') && group.groupIdx === 0) {
+                const labelName = cmdNameRaw.slice(0, -1);
+                lineTokens.push({ start: firstToken.start, length: labelName.length, type: tokenTypes.indexOf('label') });
                 idx = 1;
-              } else if (config.commands.some(c => c.name === cmdName) || ['call', 'goto', 'ret', '@include', 'macro', 'const', 'endmacro'].includes(cmdName) || workspaceSymbols.macros.includes(cmdName)) {
+              } else if (config.commands.some(c => c.name.toLowerCase() === cmdName) || ['call', 'goto', 'ret', '@include', 'macro', 'const', 'endmacro'].includes(cmdName) || workspaceSymbols.macros.some(m => m.toLowerCase() === cmdName)) {
                 let cmdType = tokenTypes.indexOf('function');
                 if (['call', 'goto', 'ret', '@include', 'macro', 'const', 'endmacro'].includes(cmdName)) {
                   cmdType = tokenTypes.indexOf('keyword');
-                } else if (workspaceSymbols.macros.includes(cmdName)) {
+                } else if (workspaceSymbols.macros.some(m => m.toLowerCase() === cmdName)) {
                   cmdType = tokenTypes.indexOf('macro');
+                } else {
+                  // Standard commands should be 'function' (which we'll map to support.function in package.json if needed, or leave as function)
+                  cmdType = tokenTypes.indexOf('function');
                 }
-                builder.push(i, firstToken.start, cmdName.length, cmdType, 0);
+                lineTokens.push({ start: firstToken.start, length: cmdNameRaw.length, type: cmdType });
                 idx = 1;
+
+                // If the command was '@include' or 'const', we don't color the next token
+                if (['@include', 'const'].includes(cmdName) && tokens.length > 1) {
+                  idx = 2;
+                }
+
+                // If the command was 'macro', the NEXT token is the macro name (declaration)
+                if (cmdName === 'macro' && tokens.length > 1) {
+                    const nextToken = tokens[1];
+                    if (/^[A-Za-z_][A-Za-z0-9_-]*/.test(nextToken.text)) {
+                        lineTokens.push({ start: nextToken.start, length: nextToken.text.length, type: tokenTypes.indexOf('macro') });
+                        idx = 2;
+                    }
+                }
+                // If the command was 'call' or 'goto', the NEXT token is a label (if it looks like one)
+                if (['call', 'goto'].includes(cmdName) && tokens.length > 1) {
+                    const nextToken = tokens[1];
+                    if (/^[A-Za-z_][A-Za-z0-9_-]*/.test(nextToken.text)) {
+                        lineTokens.push({ start: nextToken.start, length: nextToken.text.length, type: tokenTypes.indexOf('label') });
+                        idx = 2;
+                    }
+                }
+                // If the command was 'jumpIf', 'jumpIfNotFlag', etc. they might also have labels
+                if (cmdName.startsWith('jump') && tokens.length > 1) {
+                    const lastToken = tokens[tokens.length - 1];
+                    const lastText = lastToken.text.toLowerCase();
+                    if (/^[A-Za-z_][A-Za-z0-9_-]*/.test(lastToken.text)) {
+                        // If it's not a known flag or variable, it's likely a label
+                        const isFlag = flagsSet.has(lastToken.text) || Array.from(flagsSet).some(f => f.toLowerCase() === lastText);
+                        const isIdent = identifiersSet.has(lastToken.text) || Array.from(identifiersSet).some(i => i.toLowerCase() === lastText);
+                        const isVar = variablesSet.has(lastToken.text) || Array.from(variablesSet).some(v => v.toLowerCase() === lastText);
+
+                        if (!isFlag && !isIdent && !isVar) {
+                             lineTokens.push({ start: lastToken.start, length: lastToken.text.length, type: tokenTypes.indexOf('label') });
+                        }
+                    }
+                }
               }
 
               for (; idx < tokens.length; idx++) {
                 const token = tokens[idx];
-                const text = token.text;
+                const textRaw = token.text;
+                const text = textRaw.toLowerCase();
 
-                if (text === ',') continue;
+                if (textRaw === ',') continue;
 
                 // number literal
-                if (/^[+-]?\d+(?:\.\d+)?$/.test(text)) {
-                  builder.push(i, token.start, text.length, tokenTypes.indexOf('number'), 0);
+                if (/^[+-]?\d+(?:\.\d+)?$/.test(textRaw)) {
+                  lineTokens.push({ start: token.start, length: textRaw.length, type: tokenTypes.indexOf('number') });
                   continue;
                 }
 
                 // identifier-like token
-                if (/^[A-Za-z_][A-Za-z0-9_-]*/.test(text)) {
+                if (/^[A-Za-z_][A-Za-z0-9_-]*/.test(textRaw)) {
                   let type = -1;
 
-                  if (flagsSet.has(text)) {
+                  if (flagsSet.has(textRaw) || Array.from(flagsSet).some(f => f.toLowerCase() === text)) {
                     type = tokenTypes.indexOf('regexp');
-                  } else if (identifiersSet.has(text) || variablesSet.has(text)) {
-                    type = tokenTypes.indexOf('variable');
-                  } else if (workspaceSymbols.macros.includes(text)) {
+                  } else if (workspaceSymbols.macros.some(m => m.toLowerCase() === text)) {
                     type = tokenTypes.indexOf('macro');
-                  } else if (workspaceLabels.has(text) || workspaceSymbols.labels.includes(text)) {
-                    type = tokenTypes.indexOf('class');
-                  } else if (workspaceSymbols.consts.some(c => c.name === text)) {
-                    type = tokenTypes.indexOf('constant');
+                  } else if (workspaceSymbols.consts.some(c => c.name.toLowerCase() === text)) {
+                    // colorless
+                    continue;
+                  } else if (workspaceLabels.has(textRaw) || Array.from(workspaceLabels.keys()).some(k => k.toLowerCase() === text) || workspaceSymbols.labels.some(l => l.toLowerCase() === text) || textRaw.startsWith('_')) {
+                    type = tokenTypes.indexOf('label');
+                  } else if (identifiersSet.has(textRaw) || Array.from(identifiersSet).some(i => i.toLowerCase() === text)) {
+                    type = tokenTypes.indexOf('variable');
+                  } else if (variablesSet.has(textRaw) || Array.from(variablesSet).some(v => v.toLowerCase() === text)) {
+                    type = tokenTypes.indexOf('parameter');
                   }
 
                   if (type !== -1) {
-                    builder.push(i, token.start, text.length, type, 0);
+                    // Avoid pushing if already pushed (e.g. by jump detection)
+                    if (!lineTokens.some(lt => lt.start === token.start)) {
+                        lineTokens.push({ start: token.start, length: textRaw.length, type: type });
+                    }
                   }
                 }
               }
+            }
+
+            lineTokens.sort((a, b) => a.start - b.start);
+            for (const t of lineTokens) {
+              builder.push(i, t.start, t.length, t.type, 0);
             }
           }
 

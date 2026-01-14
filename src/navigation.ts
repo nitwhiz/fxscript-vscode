@@ -20,9 +20,9 @@ export function registerNavigationProviders(context: vscode.ExtensionContext, _c
         if (spec) {
           const signature = spec.name + (spec.args && spec.args.length ? ' ' + spec.args.map(a => `<${a.name}>`).join(' ') : '');
           const md = new vscode.MarkdownString();
-          md.appendCodeblock(signature);
+          md.appendCodeblock(signature, 'fxscript');
           if (spec.detail) {
-            md.appendMarkdown('\n');
+            md.appendMarkdown('\n---\n');
             md.appendMarkdown(spec.detail);
           }
           return new vscode.Hover(md, wordRange);
@@ -33,7 +33,7 @@ export function registerNavigationProviders(context: vscode.ExtensionContext, _c
         if (labelDefs && labelDefs.length > 0) {
           const def = labelDefs[labelDefs.length - 1]; // Use last definition
           const md = new vscode.MarkdownString();
-          md.appendCodeblock(`(label) ${word}`, 'fxscript');
+          md.appendCodeblock(`(label) ${word}`, 'text');
           if (def.documentation) {
             md.appendMarkdown('\n---\n');
             md.appendMarkdown(def.documentation);
@@ -46,7 +46,7 @@ export function registerNavigationProviders(context: vscode.ExtensionContext, _c
         if (macroDefs && macroDefs.length > 0) {
           const def = macroDefs[macroDefs.length - 1];
           const md = new vscode.MarkdownString();
-          md.appendCodeblock(`(macro) ${word}`, 'fxscript');
+          md.appendCodeblock(`(macro) ${word}`, 'text');
           if (def.documentation) {
             md.appendMarkdown('\n---\n');
             md.appendMarkdown(def.documentation);
@@ -58,28 +58,28 @@ export function registerNavigationProviders(context: vscode.ExtensionContext, _c
         const constDefs = symbolCache.workspaceConsts.get(word);
         if (constDefs && constDefs.length > 0) {
           const md = new vscode.MarkdownString();
-          md.appendCodeblock(`(constant) ${word}`, 'fxscript');
+          md.appendCodeblock(`(constant) ${word}`, 'text');
           return new vscode.Hover(md, wordRange);
         }
 
         // Check for flags
         if (config.flags.includes(word)) {
           const md = new vscode.MarkdownString();
-          md.appendCodeblock(`(flag) ${word}`, 'fxscript');
+          md.appendCodeblock(`(flag) ${word}`, 'text');
           return new vscode.Hover(md, wordRange);
         }
 
         // Check for identifiers
         if (config.identifiers.includes(word)) {
           const md = new vscode.MarkdownString();
-          md.appendCodeblock(`(identifier) ${word}`, 'fxscript');
+          md.appendCodeblock(`(identifier) ${word}`, 'text');
           return new vscode.Hover(md, wordRange);
         }
 
         // Check for variables
         if (config.variables.includes(word)) {
           const md = new vscode.MarkdownString();
-          md.appendCodeblock(`(variable) ${word}`, 'fxscript');
+          md.appendCodeblock(`(variable) ${word}`, 'text');
           return new vscode.Hover(md, wordRange);
         }
 

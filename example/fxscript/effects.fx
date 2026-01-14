@@ -1,7 +1,14 @@
 effectHit:
   moveHit
   canceler
-  secondaryEffect
+  callSecondaryEffect
+  goto end
+
+effectDoubleDamageHit:
+  damageSet damageTypeDouble
+  moveHit
+  canceler
+  callSecondaryEffect
   goto end
 
 effectRazorWind:
@@ -31,7 +38,7 @@ multiHitLoop:
   jumpIf multiHitCounter 0 endMultiHit
   goto multiHitLoop
 endMultiHit:
-  print msgMultiHitCount multiHitSuccessCounter
+  print msgMultiHitCount
   set multiHitSuccessCounter 0
   goto end
 
