@@ -13,7 +13,7 @@ export class UnimplementedTreeItem extends vscode.TreeItem {
     this.description = fileName;
     this.tooltip = `${fileName}:${range.start.line + 1}`;
     this.command = {
-      command: 'movescript.openUnimplemented',
+      command: 'fxscript.openUnimplemented',
       title: 'Open Unimplemented Location',
       arguments: [uri, range]
     };
@@ -36,7 +36,7 @@ export class UnimplementedTreeDataProvider implements vscode.TreeDataProvider<Un
     if (element) return [];
 
     const items: UnimplementedTreeItem[] = [];
-    const uris = await vscode.workspace.findFiles('**/*.ms');
+    const uris = await vscode.workspace.findFiles('**/*.fx');
 
     for (const uri of uris) {
       try {

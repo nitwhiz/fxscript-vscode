@@ -1,14 +1,14 @@
 import * as vscode from 'vscode';
-import { MovescriptConfig, CommandSpec } from './types';
+import { FXScriptConfig, CommandSpec } from './types';
 import { SymbolCache } from './symbols';
-import { tokenize, Token, readMovescript } from './util';
+import { tokenize, Token, readFXScript } from './util';
 
-export function registerValidation(context: vscode.ExtensionContext, _config: MovescriptConfig, symbolCache: SymbolCache) {
-  const diagnostics = vscode.languages.createDiagnosticCollection('movescript');
+export function registerValidation(context: vscode.ExtensionContext, _config: FXScriptConfig, symbolCache: SymbolCache) {
+  const diagnostics = vscode.languages.createDiagnosticCollection('fxscript');
   context.subscriptions.push(diagnostics);
 
   function validateDocument(document: vscode.TextDocument) {
-    const config = readMovescript(context);
+    const config = readFXScript(context);
     const fixedSpecMap = new Map<string, CommandSpec>();
     const allCommandsSet = new Set<string>();
     for (const c of config.commands || []) {
@@ -226,12 +226,12 @@ export function registerValidation(context: vscode.ExtensionContext, _config: Mo
 
   const triggerValidation = () => {
     vscode.workspace.textDocuments.forEach(doc => {
-      if (doc.languageId === 'movescript') validateDocument(doc);
+      if (doc.languageId === 'fxscript') validateDocument(doc);
     });
   };
 
   context.subscriptions.push(
-    vscode.commands.registerCommand('movescript.triggerValidation', triggerValidation)
+    vscode.commands.registerCommand('fxscript.triggerValidation', triggerValidation)
   );
 
   symbolCache.onRefresh(triggerValidation);
@@ -239,18 +239,18 @@ export function registerValidation(context: vscode.ExtensionContext, _config: Mo
   // Hook up validation events
   context.subscriptions.push(
     vscode.workspace.onDidOpenTextDocument(doc => {
-      if (doc.languageId === 'movescript') validateDocument(doc);
+      if (doc.languageId === 'fxscript') validateDocument(doc);
     }),
     vscode.workspace.onDidChangeTextDocument(evt => {
-      if (evt.document.languageId === 'movescript') validateDocument(evt.document);
+      if (evt.document.languageId === 'fxscript') validateDocument(evt.document);
     }),
     vscode.workspace.onDidSaveTextDocument(doc => {
-      if (doc.languageId === 'movescript') validateDocument(doc);
+      if (doc.languageId === 'fxscript') validateDocument(doc);
     })
   );
 
-  // Initial validation for all open MoveScript files
+  // Initial validation for all open FXScript files
   vscode.workspace.textDocuments.forEach(doc => {
-    if (doc.languageId === 'movescript') validateDocument(doc);
+    if (doc.languageId === 'fxscript') validateDocument(doc);
   });
 }

@@ -6,7 +6,7 @@ export async function collectWorkspaceSymbols(): Promise<{ macros: string[]; con
   const macros = new Set<string>();
   const consts = new Map<string, ConstType>();
   const labels = new Set<string>();
-  const uris = await vscode.workspace.findFiles('**/*.ms');
+  const uris = await vscode.workspace.findFiles('**/*.fx');
   for (const uri of uris) {
     try {
       const doc = await vscode.workspace.openTextDocument(uri);
@@ -23,7 +23,7 @@ export async function collectWorkspaceSymbols(): Promise<{ macros: string[]; con
 
 export async function collectAllMacroDefinitions(): Promise<Map<string, MacroDef[]>> {
   const map = new Map<string, MacroDef[]>();
-  const uris = await vscode.workspace.findFiles('**/*.ms');
+  const uris = await vscode.workspace.findFiles('**/*.fx');
   for (const uri of uris) {
     try {
       const doc = await vscode.workspace.openTextDocument(uri);
@@ -68,7 +68,7 @@ export async function collectAllMacroDefinitions(): Promise<Map<string, MacroDef
 
 export async function collectAllLabelDefinitions(): Promise<Map<string, LabelDef[]>> {
   const map = new Map<string, LabelDef[]>();
-  const uris = await vscode.workspace.findFiles('**/*.ms');
+  const uris = await vscode.workspace.findFiles('**/*.fx');
   for (const uri of uris) {
     try {
       const doc = await vscode.workspace.openTextDocument(uri);
@@ -114,7 +114,7 @@ export async function collectAllLabelDefinitions(): Promise<Map<string, LabelDef
 
 export async function collectAllConstDefinitions(): Promise<Map<string, ConstDef[]>> {
   const map = new Map<string, ConstDef[]>();
-  const uris = await vscode.workspace.findFiles('**/*.ms');
+  const uris = await vscode.workspace.findFiles('**/*.fx');
   for (const uri of uris) {
     try {
       const doc = await vscode.workspace.openTextDocument(uri);

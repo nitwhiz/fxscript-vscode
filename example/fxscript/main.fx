@@ -1,12 +1,12 @@
-@include messages.ms
-@include functions.ms
-@include engine_functions.ms
-@include macros.ms
-@include moves.ms
+@include messages.fx
+@include functions.fx
+@include engine_functions.fx
+@include macros.fx
+@include moves.fx
 
 goto end
 
-@include effects.ms
+@include effects.fx
 
 _notImplemented:
   print msgMoveNotImplemented

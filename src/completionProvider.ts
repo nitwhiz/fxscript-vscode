@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import { SymbolCache } from './symbols';
-import { readMovescript, tokenize, Token, stripCommentAndMaskStrings } from './util';
+import { readFXScript, tokenize, Token, stripCommentAndMaskStrings } from './util';
 
 function makeItems(names: string[], kind: vscode.CompletionItemKind, detail?: string): vscode.CompletionItem[] {
   return names.map(n => {
@@ -13,12 +13,12 @@ function makeItems(names: string[], kind: vscode.CompletionItemKind, detail?: st
 export function createCompletionProvider(context: vscode.ExtensionContext, symbolCache: SymbolCache) {
   const provider: vscode.CompletionItemProvider = {
     async provideCompletionItems(document, position, token, ctx) {
-      const ms = readMovescript(context);
-      const commands = ms.commands;
-      const flagsFromConfig = ms.flags;
-      const identifiersFromConfig = ms.identifiers;
-      const variablesFromConfig = ms.variables || [];
-      const tagsFromConfig = (ms.string_tags && ms.string_tags.length > 0 ? ms.string_tags : (ms.tags || []));
+      const fx = readFXScript(context);
+      const commands = fx.commands;
+      const flagsFromConfig = fx.flags;
+      const identifiersFromConfig = fx.identifiers;
+      const variablesFromConfig = fx.variables || [];
+      const tagsFromConfig = (fx.string_tags && fx.string_tags.length > 0 ? fx.string_tags : (fx.tags || []));
 
       const cache = symbolCache.symbols;
       const fullLine = document.lineAt(position.line).text;
@@ -58,7 +58,7 @@ export function createCompletionProvider(context: vscode.ExtensionContext, symbo
         for (const t of tagsFromConfig) {
           if (t.startsWith(afterOpen)) {
             const it = new vscode.CompletionItem(t, vscode.CompletionItemKind.EnumMember);
-            it.detail = 'MoveScript Tag';
+            it.detail = 'FXScript Tag';
             tagItems.push(it);
           }
         }
@@ -102,10 +102,10 @@ export function createCompletionProvider(context: vscode.ExtensionContext, symbo
       })());
 
       if (isStartOfCommand || (currentWordRange && lastCommandMatch && currentWordRange.start.character === lastCommandMatch.index + lastCommandMatch[0].indexOf(lastCommandMatch[1]))) {
-        items.push(...makeItems(commands.map(c => c.name), vscode.CompletionItemKind.Method, 'MoveScript Command'));
+        items.push(...makeItems(commands.map(c => c.name), vscode.CompletionItemKind.Method, 'FXScript Command'));
         items.push(...makeItems(['macro', 'const'], vscode.CompletionItemKind.Keyword));
         // Also suggest macros if it's not the absolute start of line?
-        // MoveScript allows macros in command positions.
+        // FXScript allows macros in command positions.
         if (lineToCursor.trim()) {
            items.push(...makeItems(cache.macros, vscode.CompletionItemKind.Module, 'Macro'));
         }

@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import { SymbolCache } from './symbols';
-import { stripCommentAndMaskStrings, readMovescript, tokenize, Token } from './util';
+import { stripCommentAndMaskStrings, readFXScript, tokenize, Token } from './util';
 
 const tokenTypes = ['class', 'variable', 'keyword', 'parameter', 'type', 'macro', 'function', 'constant', 'number', 'regexp'];
 const tokenModifiers = ['declaration', 'documentation'];
@@ -9,10 +9,10 @@ export const legend = new vscode.SemanticTokensLegend(tokenTypes, tokenModifiers
 export function registerSemanticTokenProvider(context: vscode.ExtensionContext, symbolCache: SymbolCache) {
   context.subscriptions.push(
     vscode.languages.registerDocumentSemanticTokensProvider(
-      { language: 'movescript' },
+      { language: 'fxscript' },
       {
         provideDocumentSemanticTokens(document: vscode.TextDocument) {
-          const config = readMovescript(context);
+          const config = readFXScript(context);
           const flagsSet = new Set(config.flags || []);
           const identifiersSet = new Set(config.identifiers || []);
           const variablesSet = new Set(config.variables || []);

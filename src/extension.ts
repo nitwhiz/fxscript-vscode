@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { readMovescript } from './util';
+import { readFXScript } from './util';
 import { createCompletionProvider } from './completionProvider';
 import { registerNavigationProviders } from './navigation';
 import { registerSemanticTokenProvider } from './semanticTokens';
@@ -18,7 +18,7 @@ export function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(watcher);
 
   const triggerGlobalValidation = () => {
-    vscode.commands.executeCommand('movescript.triggerValidation');
+    vscode.commands.executeCommand('fxscript.triggerValidation');
   };
 
   watcher.onDidChange(() => {
@@ -34,7 +34,7 @@ export function activate(context: vscode.ExtensionContext) {
   // Update symbol cache on saves
   context.subscriptions.push(
     vscode.workspace.onDidSaveTextDocument(doc => {
-      if (doc.languageId === 'movescript') {
+      if (doc.languageId === 'fxscript') {
         symbolCache.refresh();
       }
     })
@@ -43,11 +43,11 @@ export function activate(context: vscode.ExtensionContext) {
   // Unimplemented View
   const unimplementedProvider = new UnimplementedTreeDataProvider();
   context.subscriptions.push(
-    vscode.window.registerTreeDataProvider('movescript-todo', unimplementedProvider),
-    vscode.commands.registerCommand('movescript.openUnimplemented', (uri: vscode.Uri, range: vscode.Range) => {
+    vscode.window.registerTreeDataProvider('fxscript-todo', unimplementedProvider),
+    vscode.commands.registerCommand('fxscript.openUnimplemented', (uri: vscode.Uri, range: vscode.Range) => {
       vscode.window.showTextDocument(uri, { selection: range });
     }),
-    vscode.commands.registerCommand('movescript.refreshUnimplemented', () => {
+    vscode.commands.registerCommand('fxscript.refreshUnimplemented', () => {
       unimplementedProvider.refresh();
     })
   );
@@ -56,7 +56,7 @@ export function activate(context: vscode.ExtensionContext) {
   const completionProvider = createCompletionProvider(context, symbolCache);
   context.subscriptions.push(
     vscode.languages.registerCompletionItemProvider(
-      { language: 'movescript', scheme: 'file' },
+      { language: 'fxscript', scheme: 'file' },
       completionProvider,
       ' ', '\"', '@', '{'
     )

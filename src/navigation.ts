@@ -1,16 +1,16 @@
 import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as path from 'path';
-import { MovescriptConfig } from './types';
+import { FXScriptConfig } from './types';
 import { SymbolCache, collectAllConstDefinitions, collectAllMacroDefinitions } from './symbols';
-import { LABEL_DEF_RE, CONST_DEF_RE, MACRO_DEF_RE, getWordAtPosition, stripCommentAndMaskStrings, tokenize, Token, readMovescript } from './util';
+import { LABEL_DEF_RE, CONST_DEF_RE, MACRO_DEF_RE, getWordAtPosition, stripCommentAndMaskStrings, tokenize, Token, readFXScript } from './util';
 
-export function registerNavigationProviders(context: vscode.ExtensionContext, _config: MovescriptConfig, symbolCache: SymbolCache) {
+export function registerNavigationProviders(context: vscode.ExtensionContext, _config: FXScriptConfig, symbolCache: SymbolCache) {
   // Hover Provider
   context.subscriptions.push(
-    vscode.languages.registerHoverProvider('movescript', {
+    vscode.languages.registerHoverProvider('fxscript', {
       provideHover(document, position) {
-        const config = readMovescript(context);
+        const config = readFXScript(context);
         const wordRange = document.getWordRangeAtPosition(position, /[A-Za-z_][A-Za-z0-9_-]*/);
         if (!wordRange) return;
         const word = document.getText(wordRange);
@@ -33,7 +33,7 @@ export function registerNavigationProviders(context: vscode.ExtensionContext, _c
         if (labelDefs && labelDefs.length > 0) {
           const def = labelDefs[labelDefs.length - 1]; // Use last definition
           const md = new vscode.MarkdownString();
-          md.appendCodeblock(`(label) ${word}`, 'movescript');
+          md.appendCodeblock(`(label) ${word}`, 'fxscript');
           if (def.documentation) {
             md.appendMarkdown('\n---\n');
             md.appendMarkdown(def.documentation);
@@ -46,7 +46,7 @@ export function registerNavigationProviders(context: vscode.ExtensionContext, _c
         if (macroDefs && macroDefs.length > 0) {
           const def = macroDefs[macroDefs.length - 1];
           const md = new vscode.MarkdownString();
-          md.appendCodeblock(`(macro) ${word}`, 'movescript');
+          md.appendCodeblock(`(macro) ${word}`, 'fxscript');
           if (def.documentation) {
             md.appendMarkdown('\n---\n');
             md.appendMarkdown(def.documentation);
@@ -58,28 +58,28 @@ export function registerNavigationProviders(context: vscode.ExtensionContext, _c
         const constDefs = symbolCache.workspaceConsts.get(word);
         if (constDefs && constDefs.length > 0) {
           const md = new vscode.MarkdownString();
-          md.appendCodeblock(`(constant) ${word}`, 'movescript');
+          md.appendCodeblock(`(constant) ${word}`, 'fxscript');
           return new vscode.Hover(md, wordRange);
         }
 
         // Check for flags
         if (config.flags.includes(word)) {
           const md = new vscode.MarkdownString();
-          md.appendCodeblock(`(flag) ${word}`, 'movescript');
+          md.appendCodeblock(`(flag) ${word}`, 'fxscript');
           return new vscode.Hover(md, wordRange);
         }
 
         // Check for identifiers
         if (config.identifiers.includes(word)) {
           const md = new vscode.MarkdownString();
-          md.appendCodeblock(`(identifier) ${word}`, 'movescript');
+          md.appendCodeblock(`(identifier) ${word}`, 'fxscript');
           return new vscode.Hover(md, wordRange);
         }
 
         // Check for variables
         if (config.variables.includes(word)) {
           const md = new vscode.MarkdownString();
-          md.appendCodeblock(`(variable) ${word}`, 'movescript');
+          md.appendCodeblock(`(variable) ${word}`, 'fxscript');
           return new vscode.Hover(md, wordRange);
         }
 
@@ -91,10 +91,10 @@ export function registerNavigationProviders(context: vscode.ExtensionContext, _c
   // Signature Help Provider
   context.subscriptions.push(
     vscode.languages.registerSignatureHelpProvider(
-      { language: 'movescript', scheme: 'file' },
+      { language: 'fxscript', scheme: 'file' },
       {
         provideSignatureHelp(document, position): vscode.ProviderResult<vscode.SignatureHelp> {
-          const config = readMovescript(context);
+          const config = readFXScript(context);
           const lineText = document.lineAt(position.line).text;
           const masked = stripCommentAndMaskStrings(lineText, true);
 
@@ -172,7 +172,7 @@ export function registerNavigationProviders(context: vscode.ExtensionContext, _c
 
   // Definition Provider
   context.subscriptions.push(
-    vscode.languages.registerDefinitionProvider('movescript', {
+    vscode.languages.registerDefinitionProvider('fxscript', {
       async provideDefinition(document, position) {
         // Handle @include
         {
@@ -224,7 +224,7 @@ export function registerNavigationProviders(context: vscode.ExtensionContext, _c
 
           if (enclosing) {
             const locations: vscode.Location[] = [];
-            const uris = await vscode.workspace.findFiles('**/*.ms');
+        const uris = await vscode.workspace.findFiles('**/*.fx');
             const callRe = new RegExp(`^\\s*call\\s+${enclosing}(?![A-Za-z0-9_-])`);
             for (const uri of uris) {
               try {
@@ -280,13 +280,13 @@ export function registerNavigationProviders(context: vscode.ExtensionContext, _c
 
   // Reference Provider
   context.subscriptions.push(
-    vscode.languages.registerReferenceProvider('movescript', {
+    vscode.languages.registerReferenceProvider('fxscript', {
       async provideReferences(document, position, context) {
         const word = getWordAtPosition(document, position);
         if (!word) return [];
 
         const occurrences: vscode.Location[] = [];
-        const uris = await vscode.workspace.findFiles('**/*.ms');
+        const uris = await vscode.workspace.findFiles('**/*.fx');
         const wordRe = new RegExp(`(?<![A-Za-z0-9_-])${word}(?![A-Za-z0-9_-])`, 'g');
 
         for (const uri of uris) {
@@ -326,14 +326,14 @@ export function registerNavigationProviders(context: vscode.ExtensionContext, _c
   // Document Symbols Provider
   context.subscriptions.push(
     vscode.languages.registerDocumentSymbolProvider(
-      { language: 'movescript' },
-      new MoveScriptDocumentSymbolProvider()
+      { language: 'fxscript' },
+      new FXScriptDocumentSymbolProvider()
     )
   );
 
   // Document Links Provider
   context.subscriptions.push(
-    vscode.languages.registerDocumentLinkProvider('movescript', {
+    vscode.languages.registerDocumentLinkProvider('fxscript', {
       provideDocumentLinks(document) {
         const links: vscode.DocumentLink[] = [];
         for (let i = 0; i < document.lineCount; i++) {
@@ -369,7 +369,7 @@ export function registerNavigationProviders(context: vscode.ExtensionContext, _c
   );
 }
 
-export class MoveScriptDocumentSymbolProvider implements vscode.DocumentSymbolProvider {
+export class FXScriptDocumentSymbolProvider implements vscode.DocumentSymbolProvider {
   provideDocumentSymbols(document: vscode.TextDocument, token: vscode.CancellationToken): vscode.ProviderResult<vscode.DocumentSymbol[]> {
     const symbols: vscode.DocumentSymbol[] = [];
     for (let i = 0; i < document.lineCount; i++) {

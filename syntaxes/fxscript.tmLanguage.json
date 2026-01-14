@@ -1,7 +1,7 @@
 {
   "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
-  "name": "Arena MoveScript",
-  "scopeName": "source.movescript",
+  "name": "Arena FXScript",
+  "scopeName": "source.fxscript",
   "patterns": [
     { "include": "#comments" },
     { "include": "#directives" },
@@ -16,7 +16,7 @@
     "comments": {
       "patterns": [
         {
-          "name": "comment.line.number-sign.movescript",
+          "name": "comment.line.number-sign.fxscript",
           "match": "#.*$"
         }
       ]
@@ -24,7 +24,7 @@
     "directives": {
       "patterns": [
         {
-          "name": "keyword.control.directive.movescript",
+          "name": "keyword.control.directive.fxscript",
           "match": "(^|\\s)(@include)\\b"
         }
       ]
@@ -32,11 +32,11 @@
     "labels": {
       "patterns": [
         {
-          "name": "meta.label.movescript",
+          "name": "meta.label.fxscript",
           "match": "^(\\s*)([A-Za-z_][A-Za-z0-9_-]*)(\\s*:)",
           "captures": {
-            "2": { "name": "entity.name.function.label.movescript" },
-            "3": { "name": "punctuation.separator.label.movescript" }
+            "2": { "name": "entity.name.function.label.fxscript" },
+            "3": { "name": "punctuation.separator.label.fxscript" }
           }
         }
       ]
@@ -46,14 +46,14 @@
         {
           "begin": "^(\\s*)(macro)\\b\\s+([A-Za-z_][A-Za-z0-9_-]*)",
           "beginCaptures": {
-            "2": { "name": "storage.type.macro.movescript" },
-            "3": { "name": "entity.name.function.macro.movescript" }
+            "2": { "name": "storage.type.macro.fxscript" },
+            "3": { "name": "entity.name.function.macro.fxscript" }
           },
           "end": "^(\\s*)(endmacro)\\b",
           "endCaptures": {
-            "2": { "name": "storage.type.macro.movescript" }
+            "2": { "name": "storage.type.macro.fxscript" }
           },
-          "name": "meta.macro.movescript",
+          "name": "meta.macro.fxscript",
           "patterns": [
             { "include": "#comments" },
             { "include": "#keywords" },
@@ -67,15 +67,15 @@
     "keywords": {
       "patterns": [
         {
-          "name": "keyword.control.flow.movescript",
+          "name": "keyword.control.flow.fxscript",
           "match": "(^|\\s)(call|ret|goto)\\b"
         },
         {
-          "name": "storage.type.macro.movescript",
+          "name": "storage.type.macro.fxscript",
           "match": "(^|\\s)(macro|endmacro)\\b"
         },
         {
-          "name": "storage.type.const.movescript",
+          "name": "storage.type.const.fxscript",
           "match": "(^|\\s)(const)\\b"
         }
       ]
@@ -83,16 +83,16 @@
     "strings": {
       "patterns": [
         {
-          "name": "string.quoted.double.movescript",
+          "name": "string.quoted.double.fxscript",
           "begin": "\"",
           "end": "\"",
           "patterns": [
             {
-              "name": "constant.character.escape.movescript",
+              "name": "constant.character.escape.fxscript",
               "match": "\\\\."
             },
             {
-              "name": "variable.interpolation.movescript",
+              "name": "variable.interpolation.fxscript",
               "match": "\\{[A-Za-z_][A-Za-z0-9_-]*\\}"
             }
           ]
@@ -102,7 +102,7 @@
     "numbers": {
       "patterns": [
         {
-          "name": "constant.numeric.movescript",
+          "name": "constant.numeric.fxscript",
           "match": "(?<![A-Za-z_\\\"])(?:[+-]?)(?:\\\\d+)(?:\\\\.\\\\d+)?\\b"
         }
       ]
@@ -110,15 +110,15 @@
     "commands": {
       "patterns": [
         {
-          "name": "support.function.command.movescript",
+          "name": "support.function.command.fxscript",
           "match": "^(\\s*)(?:(?!macro|endmacro|const|@include|call|ret|goto)[A-Za-z_][A-Za-z0-9_-]*)\\b"
         },
         {
-          "name": "punctuation.separator.comma.movescript",
+          "name": "punctuation.separator.comma.fxscript",
           "match": ","
         },
         {
-          "name": "keyword.operator.arithmetic.movescript",
+          "name": "keyword.operator.arithmetic.fxscript",
           "match": "[-+*/%]"
         }
       ]

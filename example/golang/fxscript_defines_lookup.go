@@ -1,5 +1,3 @@
-//go:generate go run ../cmd/gen/ movescript_defines_lookup ./movescript_defines_lookup.tmpl ./movescript_defines.go ./movescript_defines_lookup.go
-
 package movescript
 
 import "github.com/nitwhiz/fxscript/fx"

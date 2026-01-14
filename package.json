@@ -1,10 +1,10 @@
 {
-  "name": "arena-movescript",
-  "displayName": "Arena MoveScript",
-  "description": "Syntax highlighting and IntelliSense for Arena MoveScript (*.ms).",
+  "name": "arena-fxscript",
+  "displayName": "FXScript",
+  "description": "Syntax highlighting and IntelliSense for FXScript (*.fx).",
   "version": "0.1.0",
   "publisher": "nitwhiz",
-  "repository": "https://github.com/nitwhiz/arena-movescript-vscode",
+  "repository": "https://github.com/nitwhiz/fxscript-vscode",
   "engines": {
     "vscode": "^1.100.0"
   },
@@ -15,16 +15,16 @@
     "viewsContainers": {
       "activitybar": [
         {
-          "id": "movescript-explorer",
-          "title": "MoveScript",
+          "id": "fxscript-explorer",
+          "title": "FXScript",
           "icon": "$(search-stop)"
         }
       ]
     },
     "views": {
-      "movescript-explorer": [
+      "fxscript-explorer": [
         {
-          "id": "movescript-todo",
+          "id": "fxscript-todo",
           "name": "Unimplemented (goto _notImplemented)",
           "type": "tree"
         }
@@ -32,11 +32,11 @@
     },
     "commands": [
       {
-        "command": "movescript.openUnimplemented",
+        "command": "fxscript.openUnimplemented",
         "title": "Open Unimplemented Location"
       },
       {
-        "command": "movescript.refreshUnimplemented",
+        "command": "fxscript.refreshUnimplemented",
         "title": "Refresh Unimplemented List",
         "icon": "$(refresh)"
       }
@@ -44,43 +44,42 @@
     "menus": {
       "view/title": [
         {
-          "command": "movescript.refreshUnimplemented",
-          "when": "view == movescript-todo",
+          "command": "fxscript.refreshUnimplemented",
+          "when": "view == fxscript-todo",
           "group": "navigation"
         }
       ]
     },
     "languages": [
       {
-        "id": "movescript",
-        "aliases": ["MoveScript", "movescript"],
-        "extensions": [".ms"],
+        "id": "fxscript",
+        "aliases": ["FXScript", "fxscript"],
+        "extensions": [".fx"],
         "configuration": "./language-configuration.json"
       }
     ],
     "grammars": [
       {
-        "language": "movescript",
-        "scopeName": "source.movescript",
-        "path": "./syntaxes/movescript.tmLanguage.json"
+        "language": "fxscript",
+        "scopeName": "source.fxscript",
+        "path": "./syntaxes/fxscript.tmLanguage.json"
       }
     ]
   },
   "activationEvents": [
-    "onLanguage:movescript",
-    "onView:movescript-todo",
-    "onCommand:movescript.openUnimplemented",
-    "onCommand:movescript.refreshUnimplemented"
+    "onLanguage:fxscript",
+    "onView:fxscript-todo",
+    "onCommand:fxscript.openUnimplemented",
+    "onCommand:fxscript.refreshUnimplemented"
   ],
   "main": "./out/extension.js",
   "scripts": {
     "vscode:prepublish": "tsc -p ./",
     "build": "tsc -p ./",
     "watch": "tsc -watch -p ./",
-    "generate": "node scripts/generate-movescript-json.js",
-    "package": "vsce package -o arena-movescript.vsix",
-    "vscode:install:mac": "'/Applications/Visual Studio Code.app/Contents/Resources/app/bin/code' --install-extension arena-movescript.vsix",
-    "vscode:install": "code --install-extension arena-movescript.vsix"
+    "package": "vsce package -o arena-fxscript.vsix",
+    "vscode:install:mac": "'/Applications/Visual Studio Code.app/Contents/Resources/app/bin/code' --install-extension arena-fxscript.vsix",
+    "vscode:install": "code --install-extension arena-fxscript.vsix"
   },
   "devDependencies": {
     "@types/node": "^24.10.4",

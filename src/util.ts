@@ -1,14 +1,14 @@
 import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as path from 'path';
-import { CommandSpec, MovescriptConfig, ArgType, ArgSpec, ConstType } from './types';
+import { CommandSpec, FXScriptConfig, ArgType, ArgSpec, ConstType } from './types';
 
 export const IDENT_RE = /[A-Za-z_][A-Za-z0-9_-]*/g;
 export const LABEL_DEF_RE = /^\s*([A-Za-z_][A-Za-z0-9_-]*:)/;
 export const MACRO_DEF_RE = /^macro\s+([A-Za-z_][A-Za-z0-9_-]*)/;
 export const CONST_DEF_RE = /^\s*const\s+([A-Za-z_][A-Za-z0-9_-]*)\b/;
 
-export function parseMovescriptJson(raw: string): MovescriptConfig {
+export function parseFXScriptJson(raw: string): FXScriptConfig {
   try {
     const parsed = JSON.parse(raw);
     const cmds: any[] = Array.isArray(parsed?.commands) ? parsed.commands : [];
@@ -43,21 +43,21 @@ export function parseMovescriptJson(raw: string): MovescriptConfig {
       : [];
     const legacyTags: string[] = Array.isArray(parsed?.tags) ? parsed.tags.filter((x: any) => typeof x === 'string') : [];
     const mergedTags = (string_tags.length > 0 ? string_tags : legacyTags);
-    return { commands, flags, identifiers, variables, string_tags: mergedTags, tags: legacyTags } as MovescriptConfig;
+    return { commands, flags, identifiers, variables, string_tags: mergedTags, tags: legacyTags } as FXScriptConfig;
   } catch {
-    return { commands: [], flags: [], identifiers: [], variables: [], string_tags: [] } as MovescriptConfig;
+    return { commands: [], flags: [], identifiers: [], variables: [], string_tags: [] } as FXScriptConfig;
   }
 }
 
-export function readMovescript(context: vscode.ExtensionContext): MovescriptConfig {
-  const baseFile = context.asAbsolutePath(path.join('data', 'movescript.json'));
-  let config: MovescriptConfig = { commands: [], flags: [], identifiers: [], variables: [], string_tags: [] };
+export function readFXScript(context: vscode.ExtensionContext): FXScriptConfig {
+  const baseFile = context.asAbsolutePath(path.join('data', 'fxscript.json'));
+  let config: FXScriptConfig = { commands: [], flags: [], identifiers: [], variables: [], string_tags: [] };
 
   try {
     const raw = fs.readFileSync(baseFile, 'utf8');
-    config = parseMovescriptJson(raw);
+    config = parseFXScriptJson(raw);
   } catch (err) {
-    console.error(`Failed to read base movescript.json: ${err}`);
+    console.error(`Failed to read base fxscript.json: ${err}`);
   }
 
   // Merge with workspace commands.json
@@ -68,7 +68,7 @@ export function readMovescript(context: vscode.ExtensionContext): MovescriptConf
     if (fs.existsSync(localFile)) {
       try {
         const localRaw = fs.readFileSync(localFile, 'utf8');
-        const localConfig = parseMovescriptJson(localRaw);
+        const localConfig = parseFXScriptJson(localRaw);
 
         // Merge commands
         const commandNames = new Set(config.commands.map(c => c.name));
@@ -165,7 +165,7 @@ export function getWordAtPosition(document: vscode.TextDocument, position: vscod
     return document.getText(wordRange);
 }
 
-export function knownTags(config: MovescriptConfig): Set<string> {
+export function knownTags(config: FXScriptConfig): Set<string> {
     return new Set((config.string_tags && config.string_tags.length > 0 ? config.string_tags : (config.tags || [])));
 }
 

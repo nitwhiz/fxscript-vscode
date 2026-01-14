@@ -14,7 +14,7 @@ export interface CommandSpec {
   detail?: string;
 }
 
-export interface MovescriptConfig {
+export interface FXScriptConfig {
   commands: CommandSpec[];
   flags: string[];
   identifiers: string[];
