@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 
-export type ArgType = 'label' | 'string' | 'number' | 'flag' | 'identifier' | 'variable';
+export type ArgType = 'label' | 'string' | 'number' | 'identifier';
 
 export interface ArgSpec {
   name: string;
@@ -16,10 +16,8 @@ export interface CommandSpec {
 
 export interface FXScriptConfig {
   commands: CommandSpec[];
-  flags: string[];
   identifiers: string[];
-  variables: string[];
-  string_tags?: string[];
+  stringTags?: string[];
   tags?: string[];
 }
 

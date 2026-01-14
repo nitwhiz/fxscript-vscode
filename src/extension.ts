@@ -64,13 +64,13 @@ export function activate(context: vscode.ExtensionContext) {
 
   // Navigation Providers (Hover, Signature Help, Definition, References, Document Symbols, Document Links)
   // config is now read dynamically in the provider
-  registerNavigationProviders(context, { commands: [], flags: [], identifiers: [], variables: [] }, symbolCache);
+  registerNavigationProviders(context, { commands: [], identifiers: [] }, symbolCache);
 
   // Semantic Tokens Provider
   registerSemanticTokenProvider(context, symbolCache);
 
   // Validation (Diagnostics)
-  registerValidation(context, { commands: [], flags: [], identifiers: [], variables: [] }, symbolCache);
+  registerValidation(context, { commands: [], identifiers: [] }, symbolCache);
 }
 
 export function deactivate() {}

@@ -71,10 +71,8 @@
         "scopes": {
           "macro": [ "entity.name.function.macro.fxscript" ],
           "label": [ "entity.name.type.label.fxscript" ],
-          "regexp": [ "variable.other.enummember.fxscript" ],
           "function": [ "support.function.command.fxscript" ],
-          "variable": [ "variable.other.enummember.fxscript" ],
-          "parameter": [ "variable.other.enummember.fxscript" ]
+          "variable": [ "variable.other.enummember.fxscript" ]
         }
       }
     ]

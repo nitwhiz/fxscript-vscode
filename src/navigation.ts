@@ -62,24 +62,10 @@ export function registerNavigationProviders(context: vscode.ExtensionContext, _c
           return new vscode.Hover(md, wordRange);
         }
 
-        // Check for flags
-        if (config.flags.includes(word)) {
-          const md = new vscode.MarkdownString();
-          md.appendCodeblock(`(flag) ${word}`, 'text');
-          return new vscode.Hover(md, wordRange);
-        }
-
         // Check for identifiers
         if (config.identifiers.includes(word)) {
           const md = new vscode.MarkdownString();
           md.appendCodeblock(`(identifier) ${word}`, 'text');
-          return new vscode.Hover(md, wordRange);
-        }
-
-        // Check for variables
-        if (config.variables.includes(word)) {
-          const md = new vscode.MarkdownString();
-          md.appendCodeblock(`(variable) ${word}`, 'text');
           return new vscode.Hover(md, wordRange);
         }
 

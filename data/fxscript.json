@@ -22,7 +22,7 @@
       "args": [
         {
           "name": "variable",
-          "type": "variable"
+          "type": "identifier"
         },
         {
           "name": "value",
@@ -35,11 +35,11 @@
       "args": [
         {
           "name": "from",
-          "type": "variable"
+          "type": "identifier"
         },
         {
           "name": "to",
-          "type": "variable"
+          "type": "identifier"
         }
       ]
     },
@@ -48,11 +48,11 @@
       "args": [
         {
           "name": "variable",
-          "type": "variable"
+          "type": "identifier"
         },
         {
           "name": "flag",
-          "type": "flag"
+          "type": "identifier"
         }
       ]
     },
@@ -61,11 +61,11 @@
       "args": [
         {
           "name": "variable",
-          "type": "variable"
+          "type": "identifier"
         },
         {
           "name": "flag",
-          "type": "flag"
+          "type": "identifier"
         }
       ]
     },
@@ -74,7 +74,7 @@
       "args": [
         {
           "name": "variable",
-          "type": "variable"
+          "type": "identifier"
         },
         {
           "name": "value",
@@ -100,7 +100,7 @@
       "args": [
         {
           "name": "variable",
-          "type": "variable"
+          "type": "identifier"
         },
         {
           "name": "value",
@@ -117,11 +117,11 @@
       "args": [
         {
           "name": "variable",
-          "type": "variable"
+          "type": "identifier"
         },
         {
           "name": "flag",
-          "type": "flag"
+          "type": "identifier"
         },
         {
           "name": "jumpPc",
@@ -134,11 +134,11 @@
       "args": [
         {
           "name": "variable",
-          "type": "variable"
+          "type": "identifier"
         },
         {
           "name": "flag",
-          "type": "flag"
+          "type": "identifier"
         },
         {
           "name": "jumpPc",
@@ -147,12 +147,8 @@
       ]
     }
   ],
-  "flags": [
-  ],
   "identifiers": [
   ],
-  "variables": [
-  ],
-  "string_tags": [
+  "stringTags": [
   ]
 }

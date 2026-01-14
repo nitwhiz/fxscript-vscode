@@ -21,7 +21,7 @@ export function parseFXScriptJson(raw: string): FXScriptConfig {
             ? c.args.map((a: any) => {
                 if (a && typeof a === 'object') {
                   const name = typeof a.name === 'string' ? a.name : String(a.name ?? 'arg');
-                  const type: ArgType | undefined = ['label', 'string', 'number', 'flag', 'identifier', 'variable'].includes(a.type) ? (a.type as ArgType) : undefined;
+                  const type: ArgType | undefined = ['label', 'string', 'number', 'identifier'].includes(a.type) ? (a.type as ArgType) : undefined;
                   const optional: boolean | undefined = typeof a.optional === 'boolean' ? a.optional : undefined;
                   return { name, type, optional } as ArgSpec;
                 } else {
@@ -35,23 +35,21 @@ export function parseFXScriptJson(raw: string): FXScriptConfig {
         }
         return result;
       });
-    const flags: string[] = Array.isArray(parsed?.flags) ? parsed.flags.filter((x: any) => typeof x === 'string') : [];
     const identifiers: string[] = Array.isArray(parsed?.identifiers) ? parsed.identifiers.filter((x: any) => typeof x === 'string') : [];
-    const variables: string[] = Array.isArray(parsed?.variables) ? parsed.variables.filter((x: any) => typeof x === 'string') : [];
-    const string_tags: string[] = Array.isArray(parsed?.string_tags)
-      ? parsed.string_tags.filter((x: any) => typeof x === 'string')
-      : [];
+    const stringTags: string[] = Array.isArray(parsed?.stringTags)
+      ? parsed.stringTags.filter((x: any) => typeof x === 'string')
+      : (Array.isArray(parsed?.stringTags) ? parsed.stringTags.filter((x: any) => typeof x === 'string') : []);
     const legacyTags: string[] = Array.isArray(parsed?.tags) ? parsed.tags.filter((x: any) => typeof x === 'string') : [];
-    const mergedTags = (string_tags.length > 0 ? string_tags : legacyTags);
-    return { commands, flags, identifiers, variables, string_tags: mergedTags, tags: legacyTags } as FXScriptConfig;
+    const mergedTags = (stringTags.length > 0 ? stringTags : legacyTags);
+    return { commands, identifiers, stringTags: mergedTags, tags: legacyTags } as FXScriptConfig;
   } catch {
-    return { commands: [], flags: [], identifiers: [], variables: [], string_tags: [] } as FXScriptConfig;
+    return { commands: [], identifiers: [], stringTags: [] } as FXScriptConfig;
   }
 }
 
 export function readFXScript(context: vscode.ExtensionContext): FXScriptConfig {
   const baseFile = context.asAbsolutePath(path.join('data', 'fxscript.json'));
-  let config: FXScriptConfig = { commands: [], flags: [], identifiers: [], variables: [], string_tags: [] };
+  let config: FXScriptConfig = { commands: [], identifiers: [], stringTags: [] };
 
   try {
     const raw = fs.readFileSync(baseFile, 'utf8');
@@ -80,10 +78,8 @@ export function readFXScript(context: vscode.ExtensionContext): FXScriptConfig {
         }
 
         // Merge other lists
-        config.flags = [...new Set([...config.flags, ...localConfig.flags])];
         config.identifiers = [...new Set([...config.identifiers, ...localConfig.identifiers])];
-        config.variables = [...new Set([...config.variables, ...localConfig.variables])];
-        config.string_tags = [...new Set([...(config.string_tags || []), ...(localConfig.string_tags || [])])];
+        config.stringTags = [...new Set([...(config.stringTags || []), ...(localConfig.stringTags || [])])];
       } catch (err) {
         console.error(`Failed to read local commands.json: ${err}`);
       }
@@ -166,7 +162,7 @@ export function getWordAtPosition(document: vscode.TextDocument, position: vscod
 }
 
 export function knownTags(config: FXScriptConfig): Set<string> {
-    return new Set((config.string_tags && config.string_tags.length > 0 ? config.string_tags : (config.tags || [])));
+    return new Set((config.stringTags && config.stringTags.length > 0 ? config.stringTags : (config.tags || [])));
 }
 
 export type Token = { text: string; start: number; end: number };

@@ -13,9 +13,7 @@ export function registerSemanticTokenProvider(context: vscode.ExtensionContext, 
       {
         provideDocumentSemanticTokens(document: vscode.TextDocument) {
           const config = readFXScript(context);
-          const flagsSet = new Set(config.flags || []);
           const identifiersSet = new Set(config.identifiers || []);
-          const variablesSet = new Set(config.variables || []);
 
           const builder = new vscode.SemanticTokensBuilder(legend);
 
@@ -116,17 +114,15 @@ export function registerSemanticTokenProvider(context: vscode.ExtensionContext, 
                         idx = 2;
                     }
                 }
-                // If the command was 'jumpIf', 'jumpIfNotFlag', etc. they might also have labels
+                // If the command was 'jumpIf', etc. they might also have labels
                 if (cmdName.startsWith('jump') && tokens.length > 1) {
                     const lastToken = tokens[tokens.length - 1];
                     const lastText = lastToken.text.toLowerCase();
                     if (/^[A-Za-z_][A-Za-z0-9_-]*/.test(lastToken.text)) {
-                        // If it's not a known flag or variable, it's likely a label
-                        const isFlag = flagsSet.has(lastToken.text) || Array.from(flagsSet).some(f => f.toLowerCase() === lastText);
+                        // If it's not a known identifier, it's likely a label
                         const isIdent = identifiersSet.has(lastToken.text) || Array.from(identifiersSet).some(i => i.toLowerCase() === lastText);
-                        const isVar = variablesSet.has(lastToken.text) || Array.from(variablesSet).some(v => v.toLowerCase() === lastText);
 
-                        if (!isFlag && !isIdent && !isVar) {
+                        if (!isIdent) {
                              lineTokens.push({ start: lastToken.start, length: lastToken.text.length, type: tokenTypes.indexOf('label') });
                         }
                     }
@@ -150,9 +146,7 @@ export function registerSemanticTokenProvider(context: vscode.ExtensionContext, 
                 if (/^[A-Za-z_][A-Za-z0-9_-]*/.test(textRaw)) {
                   let type = -1;
 
-                  if (flagsSet.has(textRaw) || Array.from(flagsSet).some(f => f.toLowerCase() === text)) {
-                    type = tokenTypes.indexOf('regexp');
-                  } else if (workspaceSymbols.macros.some(m => m.toLowerCase() === text)) {
+                  if (workspaceSymbols.macros.some(m => m.toLowerCase() === text)) {
                     type = tokenTypes.indexOf('macro');
                   } else if (workspaceSymbols.consts.some(c => c.name.toLowerCase() === text)) {
                     // colorless
@@ -161,8 +155,6 @@ export function registerSemanticTokenProvider(context: vscode.ExtensionContext, 
                     type = tokenTypes.indexOf('label');
                   } else if (identifiersSet.has(textRaw) || Array.from(identifiersSet).some(i => i.toLowerCase() === text)) {
                     type = tokenTypes.indexOf('variable');
-                  } else if (variablesSet.has(textRaw) || Array.from(variablesSet).some(v => v.toLowerCase() === text)) {
-                    type = tokenTypes.indexOf('parameter');
                   }
 
                   if (type !== -1) {

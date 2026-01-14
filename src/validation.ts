@@ -188,23 +188,11 @@ export function registerValidation(context: vscode.ExtensionContext, _config: FX
                     }
                   }
                 }
-              } else if (argSpec.type === 'flag') {
-                if (!config.flags.includes(argText)) {
-                  diags.push(new vscode.Diagnostic(range, `Flag '${argText}' not found.`, vscode.DiagnosticSeverity.Error));
-                }
-              } else if (argSpec.type === 'variable') {
-                const isVar = config.variables.includes(argText);
-                const isNumConst = symbolCache.symbols.consts.some(c => c.name === argText && c.type === 'number');
-                if (!isVar && !isNumConst && !/^[+-]?\d+(?:\.\d+)?$/.test(argText) && !argTokens.some(t => '-+*/%()'.includes(t.text))) {
-                   // If it's not a known variable, number constant, literal number, or expression, warn
-                   diags.push(new vscode.Diagnostic(range, `Variable or Number expected, but got '${argText}'.`, vscode.DiagnosticSeverity.Error));
-                }
               } else if (argSpec.type === 'number') {
-                const isVar = config.variables.includes(argText);
                 const isIdent = config.identifiers.includes(argText);
                 const isNumConst = symbolCache.symbols.consts.some(c => c.name === argText && c.type === 'number');
-                if (!isVar && !isIdent && !isNumConst && !/^[+-]?\d+(?:\.\d+)?$/.test(argText) && !argTokens.some(t => '-+*/%()'.includes(t.text))) {
-                  diags.push(new vscode.Diagnostic(range, `Number, Variable, or Identifier expected, but got '${argText}'.`, vscode.DiagnosticSeverity.Error));
+                if (!isIdent && !isNumConst && !/^[+-]?\d+(?:\.\d+)?$/.test(argText) && !argTokens.some(t => '-+*/%()'.includes(t.text))) {
+                  diags.push(new vscode.Diagnostic(range, `Number or Identifier expected, but got '${argText}'.`, vscode.DiagnosticSeverity.Error));
                 }
               } else if (argSpec.type === 'identifier') {
                 if (!config.identifiers.includes(argText)) {

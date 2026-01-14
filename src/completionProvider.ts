@@ -15,10 +15,8 @@ export function createCompletionProvider(context: vscode.ExtensionContext, symbo
     async provideCompletionItems(document, position, token, ctx) {
       const fx = readFXScript(context);
       const commands = fx.commands;
-      const flagsFromConfig = fx.flags;
       const identifiersFromConfig = fx.identifiers;
-      const variablesFromConfig = fx.variables || [];
-      const tagsFromConfig = (fx.string_tags && fx.string_tags.length > 0 ? fx.string_tags : (fx.tags || []));
+      const tagsFromConfig = (fx.stringTags && fx.stringTags.length > 0 ? fx.stringTags : (fx.tags || []));
 
       const cache = symbolCache.symbols;
       const fullLine = document.lineAt(position.line).text;
@@ -156,13 +154,7 @@ export function createCompletionProvider(context: vscode.ExtensionContext, symbo
         if (argSpec.type === 'label') {
           items.push(...makeItems(cache.labels, vscode.CompletionItemKind.Reference, 'Label'));
           items.push(...makeItems(cache.macros, vscode.CompletionItemKind.Module, 'Macro'));
-        } else if (argSpec.type === 'flag') {
-          items.push(...makeItems(flagsFromConfig, vscode.CompletionItemKind.EnumMember, 'Flag'));
-        } else if (argSpec.type === 'variable') {
-          items.push(...makeItems(variablesFromConfig, vscode.CompletionItemKind.Variable, 'Variable'));
-          items.push(...makeItems(cache.consts.filter(c => c.type === 'number').map(c => c.name), vscode.CompletionItemKind.Constant, 'Constant'));
         } else if (argSpec.type === 'number') {
-          items.push(...makeItems(variablesFromConfig, vscode.CompletionItemKind.Variable, 'Variable'));
           items.push(...makeItems(cache.consts.filter(c => c.type === 'number').map(c => c.name), vscode.CompletionItemKind.Constant, 'Constant'));
           items.push(...makeItems(identifiersFromConfig, vscode.CompletionItemKind.Variable, 'Identifier'));
         } else if (argSpec.type === 'string') {
@@ -174,9 +166,7 @@ export function createCompletionProvider(context: vscode.ExtensionContext, symbo
         // Fallback for unknown commands or extra arguments: suggest everything
         items.push(...makeItems(cache.macros, vscode.CompletionItemKind.Module, 'Macro'));
         items.push(...makeItems(cache.consts.map(c => c.name), vscode.CompletionItemKind.Constant, 'Constant'));
-        items.push(...makeItems(flagsFromConfig, vscode.CompletionItemKind.EnumMember, 'Flag'));
         items.push(...makeItems(identifiersFromConfig, vscode.CompletionItemKind.Variable, 'Identifier'));
-        items.push(...makeItems(variablesFromConfig, vscode.CompletionItemKind.Variable, 'Variable'));
       }
 
       // Deduplicate
