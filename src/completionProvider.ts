@@ -11,15 +11,15 @@ function makeItems(names: string[], kind: vscode.CompletionItemKind, detail?: st
 }
 
 export function createCompletionProvider(context: vscode.ExtensionContext, symbolCache: SymbolCache) {
-  const ms = readMovescript(context);
-  const commands = ms.commands;
-  const flagsFromConfig = ms.flags;
-  const identifiersFromConfig = ms.identifiers;
-  const variablesFromConfig = ms.variables || [];
-  const tagsFromConfig = (ms.string_tags && ms.string_tags.length > 0 ? ms.string_tags : (ms.tags || []));
-
   const provider: vscode.CompletionItemProvider = {
     async provideCompletionItems(document, position, token, ctx) {
+      const ms = readMovescript(context);
+      const commands = ms.commands;
+      const flagsFromConfig = ms.flags;
+      const identifiersFromConfig = ms.identifiers;
+      const variablesFromConfig = ms.variables || [];
+      const tagsFromConfig = (ms.string_tags && ms.string_tags.length > 0 ? ms.string_tags : (ms.tags || []));
+
       const cache = symbolCache.symbols;
       const fullLine = document.lineAt(position.line).text;
       const lineToCursor = fullLine.substring(0, position.character);

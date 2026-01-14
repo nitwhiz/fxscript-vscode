@@ -8,11 +8,28 @@ import { UnimplementedTreeDataProvider } from './unimplementedView';
 import { SymbolCache } from './symbols';
 
 export function activate(context: vscode.ExtensionContext) {
-  const config = readMovescript(context);
   const symbolCache = new SymbolCache();
 
   // Initial symbol collection
   symbolCache.refresh();
+
+  // Watch for commands.json changes
+  const watcher = vscode.workspace.createFileSystemWatcher('**/commands.json');
+  context.subscriptions.push(watcher);
+
+  const triggerGlobalValidation = () => {
+    vscode.commands.executeCommand('movescript.triggerValidation');
+  };
+
+  watcher.onDidChange(() => {
+    triggerGlobalValidation();
+  });
+  watcher.onDidCreate(() => {
+    triggerGlobalValidation();
+  });
+  watcher.onDidDelete(() => {
+    triggerGlobalValidation();
+  });
 
   // Update symbol cache on saves
   context.subscriptions.push(
@@ -46,13 +63,14 @@ export function activate(context: vscode.ExtensionContext) {
   );
 
   // Navigation Providers (Hover, Signature Help, Definition, References, Document Symbols, Document Links)
-  registerNavigationProviders(context, config, symbolCache);
+  // config is now read dynamically in the provider
+  registerNavigationProviders(context, { commands: [], flags: [], identifiers: [], variables: [] }, symbolCache);
 
   // Semantic Tokens Provider
   registerSemanticTokenProvider(context, symbolCache);
 
   // Validation (Diagnostics)
-  registerValidation(context, config, symbolCache);
+  registerValidation(context, { commands: [], flags: [], identifiers: [], variables: [] }, symbolCache);
 }
 
 export function deactivate() {}

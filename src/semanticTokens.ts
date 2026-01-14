@@ -7,16 +7,16 @@ const tokenModifiers = ['declaration', 'documentation'];
 export const legend = new vscode.SemanticTokensLegend(tokenTypes, tokenModifiers);
 
 export function registerSemanticTokenProvider(context: vscode.ExtensionContext, symbolCache: SymbolCache) {
-  const config = readMovescript(context);
-  const flagsSet = new Set(config.flags || []);
-  const identifiersSet = new Set(config.identifiers || []);
-  const variablesSet = new Set(config.variables || []);
-
   context.subscriptions.push(
     vscode.languages.registerDocumentSemanticTokensProvider(
       { language: 'movescript' },
       {
         provideDocumentSemanticTokens(document: vscode.TextDocument) {
+          const config = readMovescript(context);
+          const flagsSet = new Set(config.flags || []);
+          const identifiersSet = new Set(config.identifiers || []);
+          const variablesSet = new Set(config.variables || []);
+
           const builder = new vscode.SemanticTokensBuilder(legend);
           const workspaceLabels = symbolCache.workspaceLabels;
           const workspaceSymbols = symbolCache.symbols;
@@ -38,7 +38,7 @@ export function registerSemanticTokenProvider(context: vscode.ExtensionContext, 
               if (token.text === ',') {
                 const nextToken = allTokens[j + 1];
 
-                if (nextToken && (config.commands.some(c => c.name === nextToken.text) || nextToken.text === '@include' || nextToken.text === 'macro' || nextToken.text === 'const' || nextToken.text === 'endmacro' || symbolCache.symbols.macros.includes(nextToken.text)) && currentGroup.length > 0) {
+                if (nextToken && (config.commands.some(c => c.name === nextToken.text) || nextToken.text === '@include' || nextToken.text === 'macro' || nextToken.text === 'const' || nextToken.text === 'endmacro' || workspaceSymbols.macros.includes(nextToken.text)) && currentGroup.length > 0) {
                   commandGroups.push({ tokens: currentGroup, cmdName: currentGroup[0].text });
                   currentGroup = [];
                 } else {

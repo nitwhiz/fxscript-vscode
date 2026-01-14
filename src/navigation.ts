@@ -3,13 +3,14 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { MovescriptConfig } from './types';
 import { SymbolCache, collectAllConstDefinitions, collectAllMacroDefinitions } from './symbols';
-import { LABEL_DEF_RE, CONST_DEF_RE, MACRO_DEF_RE, getWordAtPosition, stripCommentAndMaskStrings, tokenize, Token } from './util';
+import { LABEL_DEF_RE, CONST_DEF_RE, MACRO_DEF_RE, getWordAtPosition, stripCommentAndMaskStrings, tokenize, Token, readMovescript } from './util';
 
-export function registerNavigationProviders(context: vscode.ExtensionContext, config: MovescriptConfig, symbolCache: SymbolCache) {
+export function registerNavigationProviders(context: vscode.ExtensionContext, _config: MovescriptConfig, symbolCache: SymbolCache) {
   // Hover Provider
   context.subscriptions.push(
     vscode.languages.registerHoverProvider('movescript', {
       provideHover(document, position) {
+        const config = readMovescript(context);
         const wordRange = document.getWordRangeAtPosition(position, /[A-Za-z_][A-Za-z0-9_-]*/);
         if (!wordRange) return;
         const word = document.getText(wordRange);
@@ -93,6 +94,7 @@ export function registerNavigationProviders(context: vscode.ExtensionContext, co
       { language: 'movescript', scheme: 'file' },
       {
         provideSignatureHelp(document, position): vscode.ProviderResult<vscode.SignatureHelp> {
+          const config = readMovescript(context);
           const lineText = document.lineAt(position.line).text;
           const masked = stripCommentAndMaskStrings(lineText, true);
 

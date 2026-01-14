@@ -1,22 +1,23 @@
 import * as vscode from 'vscode';
 import { MovescriptConfig, CommandSpec } from './types';
 import { SymbolCache } from './symbols';
-import { tokenize, Token } from './util';
+import { tokenize, Token, readMovescript } from './util';
 
-export function registerValidation(context: vscode.ExtensionContext, config: MovescriptConfig, symbolCache: SymbolCache) {
-  const fixedSpecMap = new Map<string, CommandSpec>();
-  const allCommandsSet = new Set<string>();
-  for (const c of config.commands || []) {
-    allCommandsSet.add(c.name);
-    if (Object.prototype.hasOwnProperty.call(c, 'args')) {
-      fixedSpecMap.set(c.name, c);
-    }
-  }
-
+export function registerValidation(context: vscode.ExtensionContext, _config: MovescriptConfig, symbolCache: SymbolCache) {
   const diagnostics = vscode.languages.createDiagnosticCollection('movescript');
   context.subscriptions.push(diagnostics);
 
   function validateDocument(document: vscode.TextDocument) {
+    const config = readMovescript(context);
+    const fixedSpecMap = new Map<string, CommandSpec>();
+    const allCommandsSet = new Set<string>();
+    for (const c of config.commands || []) {
+      allCommandsSet.add(c.name);
+      if (Object.prototype.hasOwnProperty.call(c, 'args')) {
+        fixedSpecMap.set(c.name, c);
+      }
+    }
+
     const diags: vscode.Diagnostic[] = [];
     const workspaceLabels = symbolCache.workspaceLabels;
 
@@ -228,6 +229,10 @@ export function registerValidation(context: vscode.ExtensionContext, config: Mov
       if (doc.languageId === 'movescript') validateDocument(doc);
     });
   };
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand('movescript.triggerValidation', triggerValidation)
+  );
 
   symbolCache.onRefresh(triggerValidation);
 

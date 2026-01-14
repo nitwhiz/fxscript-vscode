@@ -8,10 +8,8 @@ export const LABEL_DEF_RE = /^\s*([A-Za-z_][A-Za-z0-9_-]*:)/;
 export const MACRO_DEF_RE = /^macro\s+([A-Za-z_][A-Za-z0-9_-]*)/;
 export const CONST_DEF_RE = /^\s*const\s+([A-Za-z_][A-Za-z0-9_-]*)\b/;
 
-export function readMovescript(context: vscode.ExtensionContext): MovescriptConfig {
+export function parseMovescriptJson(raw: string): MovescriptConfig {
   try {
-    const file = context.asAbsolutePath(path.join('data', 'movescript.json'));
-    const raw = fs.readFileSync(file, 'utf8');
     const parsed = JSON.parse(raw);
     const cmds: any[] = Array.isArray(parsed?.commands) ? parsed.commands : [];
     const commands: CommandSpec[] = cmds
@@ -49,6 +47,50 @@ export function readMovescript(context: vscode.ExtensionContext): MovescriptConf
   } catch {
     return { commands: [], flags: [], identifiers: [], variables: [], string_tags: [] } as MovescriptConfig;
   }
+}
+
+export function readMovescript(context: vscode.ExtensionContext): MovescriptConfig {
+  const baseFile = context.asAbsolutePath(path.join('data', 'movescript.json'));
+  let config: MovescriptConfig = { commands: [], flags: [], identifiers: [], variables: [], string_tags: [] };
+
+  try {
+    const raw = fs.readFileSync(baseFile, 'utf8');
+    config = parseMovescriptJson(raw);
+  } catch (err) {
+    console.error(`Failed to read base movescript.json: ${err}`);
+  }
+
+  // Merge with workspace commands.json
+  const workspaceFolders = vscode.workspace.workspaceFolders;
+  if (workspaceFolders && workspaceFolders.length > 0) {
+    const workspaceRoot = workspaceFolders[0].uri.fsPath;
+    const localFile = path.join(workspaceRoot, 'commands.json');
+    if (fs.existsSync(localFile)) {
+      try {
+        const localRaw = fs.readFileSync(localFile, 'utf8');
+        const localConfig = parseMovescriptJson(localRaw);
+
+        // Merge commands
+        const commandNames = new Set(config.commands.map(c => c.name));
+        for (const cmd of localConfig.commands) {
+          if (!commandNames.has(cmd.name)) {
+            config.commands.push(cmd);
+            commandNames.add(cmd.name);
+          }
+        }
+
+        // Merge other lists
+        config.flags = [...new Set([...config.flags, ...localConfig.flags])];
+        config.identifiers = [...new Set([...config.identifiers, ...localConfig.identifiers])];
+        config.variables = [...new Set([...config.variables, ...localConfig.variables])];
+        config.string_tags = [...new Set([...(config.string_tags || []), ...(localConfig.string_tags || [])])];
+      } catch (err) {
+        console.error(`Failed to read local commands.json: ${err}`);
+      }
+    }
+  }
+
+  return config;
 }
 
 export function extractSymbolsFromText(text: string): { macros: string[]; consts: { name: string; type: ConstType }[]; labels: string[] } {
