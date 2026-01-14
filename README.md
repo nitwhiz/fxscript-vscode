@@ -9,12 +9,12 @@ This VS Code extension adds language support for Arena MoveScript files (`*.ms`)
 Generate it with:
 
 ```
-node scripts/generate-movescript-json.js <path/to/runtime.go> <path/to/parser_defines_lookup.go> <path/to/logger_tags.go>
+node scripts/generate-movescript-json.js <path/to/env.go> <path/to/movescript_defines_lookup.go> <path/to/logger_tags.go>
 ```
 
 The generator reads:
-- `runtime.go` (interfaces and doc comments for commands and their args)
-- `parser_defines_lookup.go` (maps of commands/flags/identifiers/variables)
+- `env.go` (interfaces and doc comments for commands and their args)
+- `movescript_defines_lookup.go` (maps of commands/flags/identifiers/variables)
 - `logger_tags.go` (const ( ... ) block listing allowed logger tag values)
 
 It writes `data/movescript.json` including commands, flags, identifiers, variables, and `string_tags`.

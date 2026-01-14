@@ -44,7 +44,7 @@
     "macro-block": {
       "patterns": [
         {
-          "begin": "^(\\s*)(macro)\\b\\s+([A-Za-z_][A-Za-z0-9_]*)",
+          "begin": "^(\\s*)(macro)\\b\\s+([A-Za-z_][A-Za-z0-9_-]*)",
           "beginCaptures": {
             "2": { "name": "storage.type.macro.movescript" },
             "3": { "name": "entity.name.function.macro.movescript" }
@@ -93,7 +93,7 @@
             },
             {
               "name": "variable.interpolation.movescript",
-              "match": "\\{[A-Za-z_][A-Za-z0-9_]*\\}"
+              "match": "\\{[A-Za-z_][A-Za-z0-9_-]*\\}"
             }
           ]
         }
@@ -111,7 +111,7 @@
       "patterns": [
         {
           "name": "support.function.command.movescript",
-          "match": "^(\\s*)(?:(?!macro|endmacro|const|@include|call|ret|goto)[A-Za-z_][A-Za-z0-9_]*)\\b"
+          "match": "^(\\s*)(?:(?!macro|endmacro|const|@include|call|ret|goto)[A-Za-z_][A-Za-z0-9_-]*)\\b"
         },
         {
           "name": "punctuation.separator.comma.movescript",

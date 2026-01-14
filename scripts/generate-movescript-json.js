@@ -2,7 +2,7 @@
   Generate data/movescript.json from Go sources.
 
   Usage:
-    node scripts/generate-movescript-json.js <runtime.go> <parser_defines_lookup.go> <logger_tags.go>
+    node scripts/generate-movescript-json.js <env.go> <movescript_defines_lookup.go> <logger_tags.go>
 */
 
 const fs = require('fs');
@@ -13,6 +13,8 @@ const path = require('path');
 const RUNTIME_INTERFACE_NAME = 'Environment';
 const OUTPUT_DIR_REL = path.join('data');
 const OUTPUT_FILENAME = 'movescript.json';
+
+const CMD_PREFIX = 'Cmd';
 
 const BASE_COMMANDS = [
   { name: 'nop', args: [] },
@@ -109,27 +111,26 @@ function extractInterfaceBody(src, interfaceName) {
   return m[1];
 }
 
+function mapGoTypeToArg(paramName, goType) {
+  const t = goType.trim();
+  if (t === 'Variable' || t === 'fx.Variable') return 'variable';
+  if (t === 'Flag' || t === 'fx.Flag') return 'flag';
+  if (t === 'Identifier' || t === 'fx.Identifier') return 'identifier';
+  if (t === 'string') return 'string';
+  if (t === 'int' || t === 'uint' || t === 'int32' || t === 'int64' || t === 'uint32' || t === 'uint64') {
+    // Heuristic: addresses/labels are ints named *ptr, *Ptr, jumpPtr, fnPtr, ptr, *Pc
+    if (/^(?:jumpPtr|fnPtr|ptr|.*Pc)$/i.test(paramName)) return 'label';
+    return 'number';
+  }
+  // Slices or interfaces we don't support as typed suggestions
+  return undefined;
+}
+
 function collectMethodMetadata(interfaceBody) {
   // Returns Map name -> { detail?: string, args: { name: string, type: string }[] }
   const map = new Map();
   const lines = interfaceBody.split(/\r?\n/);
   let pendingComments = [];
-
-  // Helper: map Go type + param name to ArgType
-  const mapGoTypeToArg = (paramName, goType) => {
-    const t = goType.trim();
-    if (t === 'Variable' || t === 'fx.Variable') return 'variable';
-    if (t === 'Flag' || t === 'fx.Flag') return 'flag';
-    if (t === 'Identifier' || t === 'fx.Identifier') return 'identifier';
-    if (t === 'string') return 'string';
-    if (t === 'int' || t === 'uint' || t === 'int32' || t === 'int64' || t === 'uint32' || t === 'uint64') {
-      // Heuristic: addresses/labels are ints named *ptr, *Ptr, jumpPtr, fnPtr, ptr
-      if (/^(?:jumpPtr|fnPtr|ptr)$/i.test(paramName)) return 'label';
-      return 'number';
-    }
-    // Slices or interfaces we don't support as typed suggestions
-    return undefined;
-  };
 
   for (const rawLine of lines) {
     const line = rawLine; // keep indentation
@@ -254,15 +255,15 @@ function extractConstStringValues(src) {
 
 function main() {
   const envFilePath = process.argv[2];
-  const parserLookupPath = process.argv[3];
+  const definesLookupPath = process.argv[3];
   const loggerTagsPath = process.argv[4];
-  if (!envFilePath || !parserLookupPath || !loggerTagsPath) {
-    console.error('Usage: node scripts/generate-movescript-json.js <env.go> <parser_defines_lookup.go> <logger_tags.go>');
+  if (!envFilePath || !definesLookupPath || !loggerTagsPath) {
+    console.error('Usage: node scripts/generate-movescript-json.js <env.go> <movescript_defines_lookup.go> <logger_tags.go>');
     process.exit(1);
   }
 
   const envSrc = readFileText(path.resolve(process.cwd(), envFilePath));
-  const parserSrc = readFileText(path.resolve(process.cwd(), parserLookupPath));
+  const definesSrc = readFileText(path.resolve(process.cwd(), definesLookupPath));
   const loggerTagsSrc = readFileText(path.resolve(process.cwd(), loggerTagsPath));
 
   // Parse method comments from Environment interface
@@ -270,10 +271,10 @@ function main() {
   const methodMeta = collectMethodMetadata(envIfaceBody);
 
   // Extract data from Go maps
-  const cmdEntries = extractMapEntries(parserSrc, 'commandTypes');
-  const flags = extractMapKeys(parserSrc, 'flags');
-  const identifiers = extractMapKeys(parserSrc, 'identifiers');
-  const variables = extractMapKeys(parserSrc, 'variables');
+  const cmdEntries = extractMapEntries(definesSrc, 'commandTypes');
+  const flags = extractMapKeys(definesSrc, 'flags');
+  const identifiers = extractMapKeys(definesSrc, 'identifiers');
+  const variables = extractMapKeys(definesSrc, 'variables');
   const tags = extractConstStringValues(loggerTagsSrc);
 
   // Basic sanity: tags should be unique and non-empty
@@ -309,7 +310,7 @@ function main() {
     // Skip base commands that are already in BASE_COMMANDS
     if (BASE_COMMANDS.some(bc => bc.name === key)) continue;
 
-    const methodName = value.replace(/\s+/g, '');
+    const methodName = value.startsWith(CMD_PREFIX) ? value.replace(/\s+/g, '') : CMD_PREFIX + value.replace(/\s+/g, '');
     const meta = methodMeta.get(methodName);
     // If we can't find it in the interface, skip it (unless it's a base command, but we already handled those)
     if (!meta) {

@@ -168,7 +168,7 @@
       "args": [
         {
           "name": "jumpPc",
-          "type": "number"
+          "type": "label"
         }
       ]
     },
@@ -181,7 +181,7 @@
       "args": [
         {
           "name": "effectPc",
-          "type": "number"
+          "type": "label"
         },
         {
           "name": "chance",
@@ -268,7 +268,7 @@
         },
         {
           "name": "jumpPc",
-          "type": "number"
+          "type": "label"
         }
       ]
     },
@@ -285,7 +285,7 @@
         },
         {
           "name": "jumpPc",
-          "type": "number"
+          "type": "label"
         }
       ]
     },
@@ -302,7 +302,7 @@
         },
         {
           "name": "jumpPc",
-          "type": "number"
+          "type": "label"
         }
       ]
     },
@@ -311,7 +311,7 @@
       "args": [
         {
           "name": "fnPc",
-          "type": "number"
+          "type": "label"
         },
         {
           "name": "chance",
@@ -324,7 +324,7 @@
       "args": [
         {
           "name": "jumpPc",
-          "type": "number"
+          "type": "label"
         },
         {
           "name": "chance",
