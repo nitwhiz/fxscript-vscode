@@ -217,6 +217,29 @@ export function registerValidation(context: vscode.ExtensionContext, _config: FX
                 }
               }
             }
+
+            // Validate tags inside any token that might contain them (primarily strings)
+            for (const token of argTokens) {
+              const text = token.text;
+              if (!text.startsWith('"')) continue; // String tags are only valid in string literals
+
+              const tagRegex = /\{([^}]+)\}/g;
+              let match;
+              while ((match = tagRegex.exec(text)) !== null) {
+                const tag = match[1];
+                if (!config.stringTags?.includes(tag)) {
+                  const startOffset = match.index + 1; // +1 for {
+                  const endOffset = startOffset + tag.length;
+                  const tagRange = new vscode.Range(
+                    i,
+                    token.start + startOffset,
+                    i,
+                    token.start + endOffset
+                  );
+                  diags.push(new vscode.Diagnostic(tagRange, `Unknown string tag: ${tag}`, vscode.DiagnosticSeverity.Error));
+                }
+              }
+            }
           });
         }
       }

@@ -16,7 +16,7 @@ export function createCompletionProvider(context: vscode.ExtensionContext, symbo
       const fx = readFXScript(context);
       const commands = fx.commands;
       const identifiersFromConfig = fx.identifiers;
-      const tagsFromConfig = (fx.stringTags && fx.stringTags.length > 0 ? fx.stringTags : (fx.tags || []));
+      const tagsFromConfig = fx.stringTags || [];
 
       const cache = symbolCache.symbols;
       const fullLine = document.lineAt(position.line).text;
@@ -56,7 +56,7 @@ export function createCompletionProvider(context: vscode.ExtensionContext, symbo
         for (const t of tagsFromConfig) {
           if (t.startsWith(afterOpen)) {
             const it = new vscode.CompletionItem(t, vscode.CompletionItemKind.EnumMember);
-            it.detail = 'FXScript Tag';
+            it.detail = '(tag)';
             tagItems.push(it);
           }
         }

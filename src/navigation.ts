@@ -62,6 +62,34 @@ export function registerNavigationProviders(context: vscode.ExtensionContext, _c
           return new vscode.Hover(md, wordRange);
         }
 
+        // Check for string tags in curly braces
+        const line = document.lineAt(position.line).text;
+        const tagRegex = /\{([^}]+)\}/g;
+        let match;
+        while ((match = tagRegex.exec(line)) !== null) {
+          const start = match.index + 1;
+          const end = start + match[1].length;
+          if (position.character >= start && position.character <= end) {
+            const tag = match[1];
+            // Only look up in stringTags
+            if (config.stringTags?.includes(tag)) {
+              // Ensure we are inside a string
+              let inString = false;
+              let escaped = false;
+              for (let i = 0; i < match.index; i++) {
+                const ch = line[i];
+                if (ch === '"' && !escaped) inString = !inString;
+                escaped = ch === '\\' && !escaped;
+              }
+              if (inString) {
+                const md = new vscode.MarkdownString();
+                md.appendCodeblock(`(tag) ${tag}`, 'text');
+                return new vscode.Hover(md, new vscode.Range(position.line, start, position.line, end));
+              }
+            }
+          }
+        }
+
         // Check for identifiers
         if (config.identifiers.includes(word)) {
           const md = new vscode.MarkdownString();
