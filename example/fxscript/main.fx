@@ -12,7 +12,7 @@ _notImplemented:
 
 _beforeTurn:
   # check sleep
-  jumpIfNotFlag attackerStatus monsterStatus1Sleep _tickSleepEnd
+  jumpIfNotFlag attackerStatus + 1, monsterStatus1Sleep, _tickSleepEnd
   jumpIf attackerStatus1Turns 0 _tickSleepWakeUp
   print "{attackerSide}'s {attacker} is asleep!"
   add attackerStatus1Turns, -1

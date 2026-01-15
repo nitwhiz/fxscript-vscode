@@ -136,7 +136,7 @@ export function registerValidation(context: vscode.ExtensionContext, _config: FX
           } else {
             // No commas. Try to split by spaces, but group operators with adjacent tokens
             let i = 0;
-            const isOperator = (t: Token) => '-+*/%'.includes(t.text);
+            const isOperator = (t: Token) => '-+*/%^()'.includes(t.text);
 
             while (i < argsTokens.length) {
               if (args.length < expectedCount - 1) {
@@ -172,10 +172,12 @@ export function registerValidation(context: vscode.ExtensionContext, _config: FX
               const argText = argTokens.map(t => t.text).join('').trim();
               const range = new vscode.Range(i, argTokens[0].start, i, argTokens[argTokens.length - 1].end);
 
+              const isOperator = (t: Token) => '-+*/%^()'.includes(t.text);
+
               if (argSpec.type === 'label') {
                 if (argTokens.length === 1) {
                   const labelName = argTokens[0].text;
-                  if (!workspaceLabels.has(labelName)) {
+                  if (!workspaceLabels.has(labelName) && !symbolCache.symbols.labels.includes(labelName)) {
                     let found = false;
                     for (let k = 0; k < document.lineCount; k++) {
                       if (document.lineAt(k).text.trim().startsWith(labelName + ':')) {
@@ -188,15 +190,25 @@ export function registerValidation(context: vscode.ExtensionContext, _config: FX
                     }
                   }
                 }
-              } else if (argSpec.type === 'number') {
-                const isIdent = config.identifiers.includes(argText);
-                const isNumConst = symbolCache.symbols.consts.some(c => c.name === argText && c.type === 'number');
-                if (!isIdent && !isNumConst && !/^[+-]?\d+(?:\.\d+)?$/.test(argText) && !argTokens.some(t => '-+*/%()'.includes(t.text))) {
-                  diags.push(new vscode.Diagnostic(range, `Number or Identifier expected, but got '${argText}'.`, vscode.DiagnosticSeverity.Error));
-                }
-              } else if (argSpec.type === 'identifier') {
-                if (!config.identifiers.includes(argText)) {
-                  diags.push(new vscode.Diagnostic(range, `Identifier '${argText}' not found.`, vscode.DiagnosticSeverity.Error));
+              } else if (argSpec.type === 'number' || argSpec.type === 'identifier') {
+                // For number and identifier types, we now allow expressions.
+                // We should validate individual tokens that look like identifiers.
+                for (const token of argTokens) {
+                  const text = token.text;
+                  if (isOperator(token)) continue;
+                  if (/^[+-]?\d+(?:\.\d+)?$/.test(text)) continue; // number literal
+                  if (text.startsWith('"')) continue; // shouldn't really happen here but for safety
+
+                  const isIdent = config.identifiers.includes(text);
+                  const isNumConst = symbolCache.symbols.consts.some(c => c.name === text && c.type === 'number');
+
+                  if (!isIdent && !isNumConst) {
+                    diags.push(new vscode.Diagnostic(
+                      new vscode.Range(i, token.start, i, token.end),
+                      `Identifier '${text}' not found.`,
+                      vscode.DiagnosticSeverity.Error
+                    ));
+                  }
                 }
               } else if (argSpec.type === 'string') {
                 const isStringConst = symbolCache.symbols.consts.some(c => c.name === argText && c.type === 'string');

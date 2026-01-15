@@ -21,14 +21,20 @@ export function activate(context: vscode.ExtensionContext) {
     vscode.commands.executeCommand('fxscript.triggerValidation');
   };
 
+  // Semantic Tokens Provider
+  const semanticTokensProvider = registerSemanticTokenProvider(context, symbolCache);
+
   watcher.onDidChange(() => {
     triggerGlobalValidation();
+    semanticTokensProvider.refresh();
   });
   watcher.onDidCreate(() => {
     triggerGlobalValidation();
+    semanticTokensProvider.refresh();
   });
   watcher.onDidDelete(() => {
     triggerGlobalValidation();
+    semanticTokensProvider.refresh();
   });
 
   // Update symbol cache on saves
@@ -65,9 +71,6 @@ export function activate(context: vscode.ExtensionContext) {
   // Navigation Providers (Hover, Signature Help, Definition, References, Document Symbols, Document Links)
   // config is now read dynamically in the provider
   registerNavigationProviders(context, { commands: [], identifiers: [] }, symbolCache);
-
-  // Semantic Tokens Provider
-  registerSemanticTokenProvider(context, symbolCache);
 
   // Validation (Diagnostics)
   registerValidation(context, { commands: [], identifiers: [] }, symbolCache);

@@ -1,6 +1,6 @@
 # FXScript (VS Code)
 
-This VS Code extension adds language support for FXScript files (`*.fx`).
+This VS Code extension adds language support for FXScript files (`*.fx`). It's 99.9% vibe coded.
 
 ## Generate FXScript data
 

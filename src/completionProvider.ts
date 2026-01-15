@@ -122,13 +122,19 @@ export function createCompletionProvider(context: vscode.ExtensionContext, symbo
 
       let argIndex = 0;
       if (hasComma) {
-        const segments = afterCmd.split(',');
-        argIndex = segments.length - 1;
+        const tokens = tokenize(afterCmd);
+        let commaCount = 0;
+        for (const t of tokens) {
+          if (t.text === ',') commaCount++;
+        }
+        const endsWithSpace = afterCmd.length > 0 && (afterCmd[afterCmd.length - 1] === ' ' || afterCmd[afterCmd.length - 1] === '\t');
+        const endsWithComma = afterCmd.trimEnd().endsWith(',');
+        argIndex = commaCount + (endsWithSpace && !endsWithComma ? 1 : 0);
       } else {
         const expectedCount = spec?.args?.length || 0;
         let i = 0;
         const args: Token[][] = [];
-        const isOperator = (t: Token) => '-+*/%'.includes(t.text);
+        const isOperator = (t: Token) => '-+*/%^()'.includes(t.text);
 
         while (i < afterTokens.length) {
           if (args.length < (expectedCount > 0 ? expectedCount - 1 : 0)) {
@@ -144,7 +150,9 @@ export function createCompletionProvider(context: vscode.ExtensionContext, symbo
           }
         }
         const endsWithSpace = afterCmd.length > 0 && (afterCmd[afterCmd.length - 1] === ' ' || afterCmd[afterCmd.length - 1] === '\t');
-        argIndex = afterTokens.length === 0 ? 0 : (args.length - (endsWithSpace ? 0 : 1));
+        const lastToken = afterTokens[afterTokens.length - 1];
+        const lastTokenIsOperator = lastToken && isOperator(lastToken);
+        argIndex = afterTokens.length === 0 ? 0 : (args.length - (endsWithSpace && !lastTokenIsOperator ? 0 : 1));
       }
 
       // 3. Collect items based on context
@@ -154,13 +162,11 @@ export function createCompletionProvider(context: vscode.ExtensionContext, symbo
         if (argSpec.type === 'label') {
           items.push(...makeItems(cache.labels, vscode.CompletionItemKind.Reference, 'Label'));
           items.push(...makeItems(cache.macros, vscode.CompletionItemKind.Module, 'Macro'));
-        } else if (argSpec.type === 'number') {
+        } else if (argSpec.type === 'number' || argSpec.type === 'identifier') {
           items.push(...makeItems(cache.consts.filter(c => c.type === 'number').map(c => c.name), vscode.CompletionItemKind.Constant, 'Constant'));
           items.push(...makeItems(identifiersFromConfig, vscode.CompletionItemKind.Variable, 'Identifier'));
         } else if (argSpec.type === 'string') {
           items.push(...makeItems(cache.consts.filter(c => c.type === 'string').map(c => c.name), vscode.CompletionItemKind.Constant, 'Constant'));
-        } else if (argSpec.type === 'identifier') {
-          items.push(...makeItems(identifiersFromConfig, vscode.CompletionItemKind.Variable, 'Identifier'));
         }
       } else {
         // Fallback for unknown commands or extra arguments: suggest everything
