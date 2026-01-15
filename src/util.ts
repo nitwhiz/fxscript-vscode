@@ -188,16 +188,11 @@ export function tokenize(line: string): Token[] {
     } else if (code[i] === ',') {
       i++;
       tokens.push({ text: ',', start, end: i });
-    } else if (code[i] === '-' && (i + 1 < n) && /[0-9]/.test(code[i + 1])) {
-      // Negative number: keep - with digits
-      i++;
-      while (i < n && /[0-9.]/.test(code[i])) i++;
-      tokens.push({ text: code.slice(start, i), start, end: i });
-    } else if ('+*/%()^'.includes(code[i])) {
+    } else if ('-+*/%()^'.includes(code[i])) {
       i++;
       tokens.push({ text: code[i - 1], start, end: i });
     } else {
-      while (i < n && !' \t,:+*/%()^'.includes(code[i])) i++;
+      while (i < n && !' \t,:-+*/%()^'.includes(code[i])) i++;
       let text = code.slice(start, i);
       // If we stopped at a colon, include it in the token if it looks like a label
       if (i < n && code[i] === ':') {

@@ -157,7 +157,7 @@ export function registerValidation(context: vscode.ExtensionContext, _config: FX
             }
           }
 
-          if (args.length < minCount || args.length > expectedCount) {
+          if (args.length < minCount || (args.length > expectedCount && expectedCount > 0)) {
             const range = new vscode.Range(i, firstToken.start, i, tokens[tokens.length - 1].end);
             const msg = args.length < minCount
               ? `Command '${cmdName}' expects at least ${minCount} arguments, but got ${args.length}.`
@@ -197,6 +197,7 @@ export function registerValidation(context: vscode.ExtensionContext, _config: FX
                   const text = token.text;
                   if (isOperator(token)) continue;
                   if (/^[+-]?\d+(?:\.\d+)?$/.test(text)) continue; // number literal
+                  if (/^\d+(?:\.\d+)?$/.test(text)) continue; // number literal without sign (since sign is now separate)
                   if (text.startsWith('"')) continue; // shouldn't really happen here but for safety
 
                   const isIdent = config.identifiers.includes(text);
