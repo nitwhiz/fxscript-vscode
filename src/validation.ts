@@ -136,7 +136,7 @@ export function registerValidation(context: vscode.ExtensionContext, _config: FX
           } else {
             // No commas. Try to split by spaces, but group operators with adjacent tokens
             let i = 0;
-            const isOperator = (t: Token) => '-+*/%^()'.includes(t.text);
+            const isOperator = (t: Token) => '-+*/%^()<>!=&|'.includes(t.text);
 
             while (i < argsTokens.length) {
               if (args.length < expectedCount - 1) {
@@ -172,7 +172,7 @@ export function registerValidation(context: vscode.ExtensionContext, _config: FX
               const argText = argTokens.map(t => t.text).join('').trim();
               const range = new vscode.Range(i, argTokens[0].start, i, argTokens[argTokens.length - 1].end);
 
-              const isOperator = (t: Token) => '-+*/%^()'.includes(t.text);
+              const isOperator = (t: Token) => '-+*/%^()<>!=&|'.includes(t.text);
 
               if (argSpec.type === 'label') {
                 if (argTokens.length === 1) {
