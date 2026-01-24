@@ -1,93 +1,40 @@
 {
   "name": "fxscript-vscode",
   "displayName": "FXScript",
-  "description": "Syntax highlighting and IntelliSense for FXScript (*.fx).",
+  "description": "Syntax highlighting and IntelliSense for FXScript.",
   "version": "0.1.0",
   "publisher": "nitwhiz",
   "repository": "https://github.com/nitwhiz/fxscript-vscode",
   "engines": {
     "vscode": "^1.100.0"
   },
-  "categories": [
-    "Programming Languages"
-  ],
+  "main": "./out/extension.js",
   "contributes": {
-    "viewsContainers": {
-      "activitybar": [
-        {
-          "id": "fxscript-explorer",
-          "title": "FXScript",
-          "icon": "$(search-stop)"
-        }
-      ]
-    },
-    "views": {
-      "fxscript-explorer": [
-        {
-          "id": "fxscript-todo",
-          "name": "Unimplemented (goto _notImplemented)",
-          "type": "tree"
-        }
-      ]
-    },
-    "commands": [
-      {
-        "command": "fxscript.openUnimplemented",
-        "title": "Open Unimplemented Location"
-      },
-      {
-        "command": "fxscript.refreshUnimplemented",
-        "title": "Refresh Unimplemented List",
-        "icon": "$(refresh)"
-      }
-    ],
-    "menus": {
-      "view/title": [
-        {
-          "command": "fxscript.refreshUnimplemented",
-          "when": "view == fxscript-todo",
-          "group": "navigation"
-        }
-      ]
-    },
     "languages": [
       {
         "id": "fxscript",
-        "aliases": ["FXScript", "fxscript"],
-        "extensions": [".fx"],
+        "aliases": [
+          "FXScript"
+        ],
+        "extensions": [
+          ".fx",
+          ".fxs",
+          ".fxt"
+        ],
         "configuration": "./language-configuration.json"
       }
     ],
     "grammars": [
       {
         "language": "fxscript",
-        "scopeName": "source.fxscript",
+        "scopeName": "source.fx",
         "path": "./syntaxes/fxscript.tmLanguage.json"
-      }
-    ],
-    "semanticTokenScopes": [
-      {
-        "language": "fxscript",
-        "scopes": {
-          "macro": [ "entity.name.function.macro.fxscript" ],
-          "label": [ "entity.name.type.label.fxscript" ],
-          "function": [ "support.function.command.fxscript" ],
-          "variable": [ "variable.other.enummember.fxscript" ]
-        }
       }
     ]
   },
-  "activationEvents": [
-    "onLanguage:fxscript",
-    "onView:fxscript-todo",
-    "onCommand:fxscript.openUnimplemented",
-    "onCommand:fxscript.refreshUnimplemented"
-  ],
-  "main": "./out/extension.js",
   "scripts": {
     "vscode:prepublish": "tsc -p ./",
     "build": "tsc -p ./",
-    "watch": "tsc -watch -p ./",
     "package": "vsce package -o fxscript.vsix",
     "vscode:install:mac": "'/Applications/Visual Studio Code.app/Contents/Resources/app/bin/code' --install-extension fxscript.vsix",
     "vscode:install": "code --install-extension fxscript.vsix"

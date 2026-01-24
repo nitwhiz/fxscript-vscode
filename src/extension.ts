@@ -1,79 +1,59 @@
 import * as vscode from 'vscode';
-import { readFXScript } from './util';
-import { createCompletionProvider } from './completionProvider';
-import { registerNavigationProviders } from './navigation';
-import { registerSemanticTokenProvider } from './semanticTokens';
-import { registerValidation } from './validation';
-import { UnimplementedTreeDataProvider } from './unimplementedView';
-import { SymbolCache } from './symbols';
+import { CommandRegistry } from './util/commandRegistry';
+import { SemanticTokenProvider, legend } from './highlighting/semanticTokens';
+import { FXScriptCompletionItemProvider } from './lsp/completion';
+import { FXScriptHoverProvider } from './lsp/hover';
+import { FXScriptDefinitionProvider } from './lsp/definition';
+import { FXScriptDocumentSymbolProvider } from './lsp/symbols';
 
-export function activate(context: vscode.ExtensionContext) {
-  const symbolCache = new SymbolCache();
+let registry: CommandRegistry;
 
-  // Initial symbol collection
-  symbolCache.refresh();
+export async function activate(context: vscode.ExtensionContext) {
+    registry = new CommandRegistry(context.extensionUri);
+    const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+    await registry.load(workspaceRoot);
 
-  // Watch for commands.json changes
-  const watcher = vscode.workspace.createFileSystemWatcher('**/commands.json');
-  context.subscriptions.push(watcher);
+    context.subscriptions.push(
+        vscode.languages.registerDocumentSemanticTokensProvider(
+            { language: 'fxscript' },
+            new SemanticTokenProvider(registry),
+            legend
+        )
+    );
 
-  const triggerGlobalValidation = () => {
-    vscode.commands.executeCommand('fxscript.triggerValidation');
-  };
+    context.subscriptions.push(
+        vscode.languages.registerCompletionItemProvider(
+            { language: 'fxscript' },
+            new FXScriptCompletionItemProvider(registry)
+        )
+    );
 
-  // Semantic Tokens Provider
-  const semanticTokensProvider = registerSemanticTokenProvider(context, symbolCache);
+    context.subscriptions.push(
+        vscode.languages.registerHoverProvider(
+            { language: 'fxscript' },
+            new FXScriptHoverProvider(registry)
+        )
+    );
 
-  watcher.onDidChange(() => {
-    triggerGlobalValidation();
-    semanticTokensProvider.refresh();
-  });
-  watcher.onDidCreate(() => {
-    triggerGlobalValidation();
-    semanticTokensProvider.refresh();
-  });
-  watcher.onDidDelete(() => {
-    triggerGlobalValidation();
-    semanticTokensProvider.refresh();
-  });
+    context.subscriptions.push(
+        vscode.languages.registerDocumentSymbolProvider(
+            { language: 'fxscript' },
+            new FXScriptDocumentSymbolProvider()
+        )
+    );
 
-  // Update symbol cache on saves
-  context.subscriptions.push(
-    vscode.workspace.onDidSaveTextDocument(doc => {
-      if (doc.languageId === 'fxscript') {
-        symbolCache.refresh();
-      }
-    })
-  );
+    context.subscriptions.push(
+        vscode.languages.registerDefinitionProvider(
+            { language: 'fxscript' },
+            new FXScriptDefinitionProvider()
+        )
+    );
 
-  // Unimplemented View
-  const unimplementedProvider = new UnimplementedTreeDataProvider();
-  context.subscriptions.push(
-    vscode.window.registerTreeDataProvider('fxscript-todo', unimplementedProvider),
-    vscode.commands.registerCommand('fxscript.openUnimplemented', (uri: vscode.Uri, range: vscode.Range) => {
-      vscode.window.showTextDocument(uri, { selection: range });
-    }),
-    vscode.commands.registerCommand('fxscript.refreshUnimplemented', () => {
-      unimplementedProvider.refresh();
-    })
-  );
-
-  // Completion Provider
-  const completionProvider = createCompletionProvider(context, symbolCache);
-  context.subscriptions.push(
-    vscode.languages.registerCompletionItemProvider(
-      { language: 'fxscript', scheme: 'file' },
-      completionProvider,
-      ' ', '\"', '@', '{'
-    )
-  );
-
-  // Navigation Providers (Hover, Signature Help, Definition, References, Document Symbols, Document Links)
-  // config is now read dynamically in the provider
-  registerNavigationProviders(context, { commands: [], identifiers: [] }, symbolCache);
-
-  // Validation (Diagnostics)
-  registerValidation(context, { commands: [], identifiers: [] }, symbolCache);
+    context.subscriptions.push(
+        vscode.workspace.createFileSystemWatcher('**/commands.json').onDidChange(() => {
+            registry.load(workspaceRoot);
+        })
+    );
 }
 
 export function deactivate() {}

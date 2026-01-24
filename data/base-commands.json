@@ -18,59 +18,25 @@
       ]
     },
     {
+      "name": "push",
+      "args": [
+        {
+          "name": "variable",
+          "type": "identifier"
+        }
+      ]
+    },
+    {
+      "name": "pop",
+      "args": [
+        {
+          "name": "variable",
+          "type": "identifier"
+        }
+      ]
+    },
+    {
       "name": "set",
-      "args": [
-        {
-          "name": "variable",
-          "type": "identifier"
-        },
-        {
-          "name": "value",
-          "type": "number"
-        }
-      ]
-    },
-    {
-      "name": "copy",
-      "args": [
-        {
-          "name": "from",
-          "type": "identifier"
-        },
-        {
-          "name": "to",
-          "type": "identifier"
-        }
-      ]
-    },
-    {
-      "name": "setFlag",
-      "args": [
-        {
-          "name": "variable",
-          "type": "identifier"
-        },
-        {
-          "name": "flag",
-          "type": "identifier"
-        }
-      ]
-    },
-    {
-      "name": "clearFlag",
-      "args": [
-        {
-          "name": "variable",
-          "type": "identifier"
-        },
-        {
-          "name": "flag",
-          "type": "identifier"
-        }
-      ]
-    },
-    {
-      "name": "add",
       "args": [
         {
           "name": "variable",
