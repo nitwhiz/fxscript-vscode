@@ -45,10 +45,10 @@
     ]
   },
   "scripts": {
-    "vscode:prepublish": "npm run compile",
-    "compile": "tsc -p ./",
+    "vscode:prepublish": "npm run build",
+    "build": "tsc -p ./",
     "watch": "tsc -watch -p ./",
-    "run-example": "npm run compile && code --extensionDevelopmentPath=$(pwd) --user-data-dir=$(pwd)/.vscode-test/user-data examples/script",
+    "run-example": "npm run build && code --extensionDevelopmentPath=$(pwd) --user-data-dir=$(pwd)/.vscode-test/user-data examples/script",
     "package": "vsce package"
   },
   "devDependencies": {

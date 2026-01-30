@@ -6,19 +6,22 @@
       "include": "#comments"
     },
     {
-      "include": "#directives"
-    },
-    {
       "include": "#keywords"
     },
     {
-      "include": "#commands"
+      "include": "#directives"
     },
     {
       "include": "#labels"
     },
     {
+      "include": "#commands"
+    },
+    {
       "include": "#literals"
+    },
+    {
+      "include": "#strings"
     },
     {
       "include": "#operators"
@@ -39,8 +42,18 @@
     "directives": {
       "patterns": [
         {
-          "name": "keyword.control.directive.fx",
-          "match": "^\\s*@(include|const)\\b"
+          "match": "(@include)\\s+([a-zA-Z0-9\\._-]+)",
+          "captures": {
+            "1": { "name": "keyword.control.directive.fx" },
+            "2": { "name": "string.other.filename.fx" }
+          }
+        },
+        {
+          "match": "^\\s*(@const)\\s+([^\\s#]+)",
+          "captures": {
+            "1": { "name": "keyword.control.directive.fx" },
+            "2": { "name": "variable.other.fx" }
+          }
         }
       ]
     },
@@ -56,7 +69,7 @@
       "patterns": [
         {
           "name": "keyword.other.command.fx",
-          "match": "\\b(set|goto|call|ret|jumpIf|nop|push|pop)\\b"
+          "match": "^\\s*[a-zA-Z0-9_\\.\\$\\-]+(?=\\s|$)"
         }
       ]
     },
@@ -64,11 +77,36 @@
       "patterns": [
         {
           "name": "entity.name.function.label.fx",
-          "match": "^\\s*([%_a-zA-Z0-9]+):"
+          "match": "^\\s*([%_a-zA-Z0-9\\.\\$\\-]+):(?!\\S)"
         },
         {
-          "name": "entity.name.function.label.fx",
-          "match": "(?<=goto|call|jumpIf)\\s+([%_a-zA-Z0-9]+)"
+          "match": "(?i)\\b(goto|call|jumpIf|accuracyCheck|if|else|while|until)\\b\\s+([%_a-zA-Z0-9\\.\\$\\-]+)",
+          "captures": {
+            "1": { "name": "keyword.other.command.fx" },
+            "2": { "name": "entity.name.function.label.fx" }
+          }
+        },
+        {
+          "match": "(,)\\s*([%_a-zA-Z0-9\\.\\$\\-]+)",
+          "captures": {
+            "1": { "name": "punctuation.separator.comma.fx" },
+            "2": { "name": "entity.name.function.label.fx" }
+          }
+        }
+      ]
+    },
+    "strings": {
+      "patterns": [
+        {
+          "name": "string.quoted.double.fx",
+          "begin": "\"",
+          "end": "\"",
+          "patterns": [
+            {
+              "name": "constant.character.escape.fx",
+              "match": "\\\\."
+            }
+          ]
         }
       ]
     },
@@ -85,17 +123,6 @@
         {
           "name": "constant.numeric.decimal.fx",
           "match": "\\b[0-9]+\\b"
-        },
-        {
-          "name": "string.quoted.double.fx",
-          "begin": "\"",
-          "end": "\"",
-          "patterns": [
-            {
-              "name": "constant.character.escape.fx",
-              "match": "\\\\."
-            }
-          ]
         }
       ]
     },

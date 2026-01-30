@@ -1,4 +1,6 @@
+# MOVE_DIG
 @const move:dig
+
 @const move:fly
 
 const fStatusSleep      1 << 0
