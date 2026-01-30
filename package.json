@@ -1,0 +1,66 @@
+{
+  "publisher": "nitwhiz",
+  "name": "fxscript-vscode",
+  "displayName": "FXScript",
+  "description": "VSCode extension for FXScript",
+  "version": "0.0.1",
+  "engines": {
+    "vscode": "^1.90.0"
+  },
+  "categories": [
+    "Programming Languages"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/nitwhiz/fxscript-vscode.git"
+  },
+  "activationEvents": [
+    "onLanguage:fxscript",
+    "workspaceContains:**/commands.json"
+  ],
+  "main": "./out/client/extension.js",
+  "contributes": {
+    "languages": [
+      {
+        "id": "fxscript",
+        "aliases": [
+          "FXScript",
+          "fxscript"
+        ],
+        "mimetypes": [
+          "text/x-fxscript"
+        ],
+        "extensions": [
+          ".fx"
+        ],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "fxscript",
+        "scopeName": "source.fx",
+        "path": "./syntaxes/fxscript.tmLanguage.json"
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "run-example": "npm run compile && code --extensionDevelopmentPath=$(pwd) --user-data-dir=$(pwd)/.vscode-test/user-data examples/script",
+    "package": "vsce package"
+  },
+  "devDependencies": {
+    "@types/node": "24.x",
+    "@types/vscode": "^1.90.0",
+    "@vscode/vsce": "^3.2.1",
+    "typescript": "^5.7.3"
+  },
+  "dependencies": {
+    "vscode-languageclient": "^9.0.1",
+    "vscode-languageserver": "^9.0.1",
+    "vscode-languageserver-textdocument": "^1.0.11",
+    "vscode-uri": "^3.1.0"
+  }
+}

@@ -9,7 +9,7 @@ FXScript is a line-based, case-sensitive assembly-like language.
 - **Include Mechanism**: `@include filename.fx` (C-style include - is replaced with the file content).
 - **Constants & Variables**:
     - `@const name:value` (External/Special constants, will be looked up by a custom function on script load - just highlight this in a proper way, don't 
-      parse it further).
+      parse it further). If it has a comment behind it, the first word of the comment is the name this `@const` will render at runtime as a `const`. E.g. `@const move:mything # MOVE_MYTHING` renders `const MOVE_MYTHING`.
     - `const name value` (Standard constants, value can be an expression – evaulated at runtime, not before).
     - `var name` (Variable declaration).
 - **Labels**:
@@ -98,6 +98,7 @@ FXScript is a line-based, case-sensitive assembly-like language.
 
 ### Development Workflow
 
+- **Never modify anything in the `examples/` directory.**
 0. **Reference Implementation**: Use the Go implementation at `~/dev/fxscript` as the source of truth for lexing, parsing, and preprocessor logic.
 1. **Setup Project**: Initialize a TypeScript-based VSCode extension project (using `yo code` or similar).
 2. **Analyze `commands.json`**: Ensure it is the source of truth for custom commands.
@@ -106,3 +107,4 @@ FXScript is a line-based, case-sensitive assembly-like language.
 5. **Dynamic Refresh**: Listen for changes to `commands.json` and trigger a re-highlighting/re-parsing of `.fx` files.
 6. **Testing**: There should be a npm script to start a VSCode instance (sandbox-ish?) with the latest extension build loaded and the examples/script folder 
    opened. The vscode binary should be configurable, this will be developed on mac and linux.
+   Ensure the extension is compiled before running (e.g., `npm run compile && code ...`).

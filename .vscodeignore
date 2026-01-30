@@ -1,0 +1,12 @@
+.vscode/**
+.idea/**
+.junie/**
+src/**
+tsconfig.json
+.output.txt
+pnpm-lock.yaml
+pnpm-workspace.yaml
+examples/**
+# Ensure node_modules is handled by vsce (it includes production dependencies automatically)
+node_modules/**
+fxscript-vscode-*.vsix
