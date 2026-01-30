@@ -1,0 +1,35 @@
+{
+  "commands": [
+    {
+      "name": "rand",
+      "args": [
+        { "variable": "identifier" }
+      ]
+    },
+    {
+      "name": "accuracyCheck",
+      "args": [
+        { "missedJumpPc": "label" }
+      ]
+    },
+    {
+      "name": "damageCalc"
+    },
+    {
+      "name": "critCalc"
+    },
+    {
+      "name": "typeCalc"
+    },
+    {
+      "name": "hpUpdate"
+    }
+  ],
+  "identifiers": [
+    "damage",
+    "overrideMovePower",
+    "sourceStatus",
+    "targetStatus",
+    "currentMove"
+  ]
+}
