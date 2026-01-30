@@ -104,3 +104,5 @@ FXScript is a line-based, case-sensitive assembly-like language.
 3. **Reconstruct Grammar**: Use the Go implementation as the reference for the lexer and parser logic.
 4. **Global Index**: Implement a Symbol Index or Language Server (LSP) in TypeScript to provide workspace-wide symbol resolution.
 5. **Dynamic Refresh**: Listen for changes to `commands.json` and trigger a re-highlighting/re-parsing of `.fx` files.
+6. **Testing**: There should be a npm script to start a VSCode instance (sandbox-ish?) with the latest extension build loaded and the examples/script folder 
+   opened. The vscode binary should be configurable, this will be developed on mac and linux.
