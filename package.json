@@ -15,9 +15,31 @@
     "url": "https://github.com/nitwhiz/fxscript-vscode.git"
   },
   "activationEvents": [
-    "onLanguage:fxscript",
-    "workspaceContains:**/commands.json"
+    "onLanguage:fxscript"
   ],
+  "main": "./out/vscode/Extension.js",
+  "contributes": {
+    "languages": [
+      {
+        "id": "fxscript",
+        "aliases": [
+          "FXScript",
+          "fxscript"
+        ],
+        "extensions": [
+          ".fx"
+        ],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "fxscript",
+        "scopeName": "source.fx",
+        "path": "./syntaxes/fxscript.tmLanguage.json"
+      }
+    ]
+  },
   "scripts": {
     "vscode:prepublish": "npm run build",
     "build": "tsc -p ./",
