@@ -95,12 +95,25 @@ export class Parser {
   private parseCommandArguments(commandName?: string) {
     const command = commandName ? this.commandRegistry?.getCommand(commandName) : undefined;
     let argIndex = 0;
+    let hasArgs = false;
+
+    // Use a default range in case we can't find a better one
+    let range = new vscode.Range(0, 0, 0, 0);
+
+    // Look back for the command token to get its range for diagnostics
+    // We assume the caller just advanced past the command name
+    if (this.pos > 0) {
+      const commandToken = this.tokens[this.pos - 1];
+      range = this.tokenToRange(commandToken);
+    }
 
     while (this.pos < this.tokens.length) {
       const token = this.peek();
       if (token.type === TokenType.NEWLINE || token.type === TokenType.EOF) {
         break;
       }
+
+      hasArgs = true;
 
       if (token.type === TokenType.COMMA) {
         this.advance();
@@ -109,6 +122,48 @@ export class Parser {
       }
 
       this.parseExpression(command, argIndex);
+    }
+
+    const actualArgCount = hasArgs ? argIndex + 1 : 0;
+    let expectedArgCount = 0;
+
+    if (commandName) {
+      if (command) {
+        expectedArgCount = command.args?.length || 0;
+      } else if (this.isBuiltInCommand(commandName)) {
+        switch (commandName) {
+          case 'set':
+            expectedArgCount = 2;
+            break;
+          case 'goto':
+          case 'call':
+            expectedArgCount = 1;
+            break;
+          case 'jumpIf':
+            expectedArgCount = 2;
+            break;
+          case 'ret':
+            expectedArgCount = 0;
+            break;
+        }
+      } else {
+        // Check if it's a macro
+        const symbols = this.symbolTable.getSymbols(commandName);
+        const macroDef = symbols.find(s => s.type === SymbolType.MACRO);
+        if (macroDef && macroDef.argCount !== undefined) {
+          expectedArgCount = macroDef.argCount;
+        }
+      }
+    }
+
+    if (actualArgCount < expectedArgCount) {
+      const isMacro = !command && !this.isBuiltInCommand(commandName || "");
+      const typeStr = isMacro ? 'Macro' : 'Command';
+      this.diagnostics.push(new vscode.Diagnostic(
+        range,
+        `${typeStr} '${commandName}' expects ${expectedArgCount} arguments, but got ${actualArgCount}.`,
+        vscode.DiagnosticSeverity.Error
+      ));
     }
   }
 
@@ -293,11 +348,26 @@ export class Parser {
       this.currentMacroName = macroName;
       this.currentMacroArgs.clear();
 
+      let argCount = 0;
+      // Macros can have arguments on the same line
+      let tempPos = this.pos;
+      while (tempPos < this.tokens.length) {
+        const token = this.tokens[tempPos];
+        if (token.type === TokenType.NEWLINE || token.type === TokenType.EOF) {
+          break;
+        }
+        if (token.type === TokenType.IDENTIFIER && token.value.startsWith('$')) {
+          argCount++;
+        }
+        tempPos++;
+      }
+
       this.symbolTable.addSymbol({
         name: macroName,
         type: SymbolType.MACRO,
         uri: this.uri,
-        range: this.tokenToRange(nameToken)
+        range: this.tokenToRange(nameToken),
+        argCount: argCount
       });
 
       // Macros can have arguments on the same line
