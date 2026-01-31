@@ -16,10 +16,6 @@ endmacro
 
 macro AccuracyCheck
   accuracyCheck %_miss
-  inc A # this does not exist
-  goto F # this identifier does not exist
-  3 + 5 # this is just incorrect on a line
-  goto 5 + 3 + # incomplete expression
   goto %_continue
 %_miss:
   SetFlag moveResult, fMoveMissed
