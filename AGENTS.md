@@ -15,8 +15,9 @@ FXScript is characterized by its instruction-oriented syntax, supporting macros,
 - **Constants & Variables**:
     - `var name`: Declares a variable (memory location). Cannot be redeclared.
     - `const name <expression>`: Defines a standard constant. Tokens are replaced on usage; value cannot change.
-    - `@const name:value`: External/Special constants (Const Lookups).
+    - `@const name`: External/Special constants (Const Lookups).
         - Highlighting only (no deep parsing required).
+        - **Value Format**: The value following `@const` can be any string (e.g., `name:value` or just `value`). The colon in `name:value` is just an example and is not part of the specification.
         - **Documentation Rule**: If a `@const` is preceded by a comment on the line immediately above, the first word of that comment is the name this `@const` will be represented as at runtime. Ignore everything else in the comment.
         - *Example:*
           ```fx

@@ -38,7 +38,8 @@
         "scopeName": "source.fx",
         "path": "./syntaxes/fxscript.tmLanguage.json"
       }
-    ]
+    ],
+    "semanticTokenTypes": []
   },
   "scripts": {
     "vscode:prepublish": "npm run build",

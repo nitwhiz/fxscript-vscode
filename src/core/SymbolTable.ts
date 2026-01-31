@@ -22,6 +22,7 @@ export interface SymbolReference {
   name: string;
   uri: vscode.Uri;
   range: vscode.Range;
+  expectedType?: SymbolType;
 }
 
 export class SymbolTable {
@@ -46,6 +47,14 @@ export class SymbolTable {
 
   public getReferences(name: string): SymbolReference[] {
     return this.references.get(name) || [];
+  }
+
+  public getAllReferences(): { name: string, references: SymbolReference[] }[] {
+    const all: { name: string, references: SymbolReference[] }[] = [];
+    for (const [name, refs] of this.references.entries()) {
+      all.push({ name, references: refs });
+    }
+    return all;
   }
 
   public clearFileSymbols(uri: vscode.Uri) {

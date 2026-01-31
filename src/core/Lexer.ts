@@ -94,16 +94,16 @@ export class Lexer {
       return this.consumeToken(TokenType.RPAREN, ")");
     }
 
-    if (this.isAlpha(char)) {
-      return this.readIdentifierOrKeyword();
-    }
-
     if (this.isDigit(char)) {
       return this.readNumber();
     }
 
     if (this.isOperator(char)) {
       return this.readOperator();
+    }
+
+    if (this.isAlpha(char)) {
+      return this.readIdentifierOrKeyword();
     }
 
     const unknown = this.advance();
@@ -130,7 +130,7 @@ export class Lexer {
       value += this.advance();
     }
     
-    if (value === "@const") {
+    if (value === "@const" || value === "@include") {
       this.skipWhitespace();
       while (this.pos < this.input.length && this.peek() !== '\n' && this.peek() !== '#') {
         value += this.advance();
@@ -158,9 +158,15 @@ export class Lexer {
     if (this.peek() === '_') {
       value += this.advance();
     }
-    while (this.pos < this.input.length && (this.isAlphaNumeric(this.peek()) || this.peek() === ':')) {
+    while (this.pos < this.input.length && this.isAlphaNumeric(this.peek())) {
       value += this.advance();
     }
+    
+    if (this.peek() === ':') {
+      value += this.advance();
+      return this.createToken(TokenType.LOCAL_LABEL, value);
+    }
+
     return this.createToken(TokenType.LOCAL_LABEL, value);
   }
 
@@ -183,6 +189,48 @@ export class Lexer {
   private readIdentifierOrKeyword(): Token {
     let value = "";
     while (this.pos < this.input.length && (this.isAlphaNumeric(this.peek()))) {
+      // If we encounter a '-', it could be an operator OR part of a label.
+      // In FXScript, '-' is allowed in labels but also used as an operator.
+      // We need to disambiguate.
+      if (this.peek() === '-') {
+        // Look ahead to see if it's a label definition or followed by characters that make it likely a label usage.
+        let isLabelPart = false;
+        
+        // 1. Check if it's a label definition (colon later on same line)
+        for (let i = 1; this.pos + i < this.input.length; i++) {
+          const c = this.input[this.pos + i];
+          if (c === '\n') break;
+          if (c === ':') {
+            isLabelPart = true;
+            break;
+          }
+          if (this.isWhitespace(c) || this.isOperator(c) || c === ',' || c === '(' || c === ')') break;
+        }
+
+        // 2. If not a definition, check if it's a usage.
+        // If it's followed by alpha-numeric characters AND NOT by a space or another operator,
+        // we might consider it part of an identifier.
+        // However, 'x-1' should be 'x', '-', '1'.
+        // 'My-Label' followed by a comma or newline or space could be a label.
+        
+        if (!isLabelPart) {
+          // If the next character is not a digit, and we have alpha chars after, it might be a label.
+          // BUT, to be safe and match the user's "definition navigation still splits at '-'" complaint,
+          // we should probably be more inclusive if it looks like a word.
+          
+          const nextChar = this.peek(1);
+          if (nextChar && (this.isAlpha(nextChar) && nextChar !== '-')) {
+             // It's like 'My-Label'. 
+             // We'll treat it as part of the identifier.
+             isLabelPart = true;
+          }
+        }
+        
+        if (!isLabelPart) {
+          // It's likely an operator (e.g., 'x-1' or 'x - 1'), stop here.
+          break;
+        }
+      }
       value += this.advance();
     }
     
@@ -259,7 +307,7 @@ export class Lexer {
   }
 
   private isAlpha(char: string): boolean {
-    return (char >= 'a' && char <= 'z') || (char >= 'A' && char <= 'Z') || char === '_' || char === '-';
+    return (char >= 'a' && char <= 'z') || (char >= 'A' && char <= 'Z') || char === '_' || char === '$' || char === '-';
   }
 
   private isAlphaNumeric(char: string): boolean {

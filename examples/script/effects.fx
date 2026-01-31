@@ -21,6 +21,6 @@ EffectMultiHit:
 %_loop:
   Canceler
   hpUpdate
-  set multiHitCounter, multiHitCounter - 1
+  set multiHitCounter, multiHitCounter - 1 
   jumpIf multiHitCounter > 0, %_loop
   goto End

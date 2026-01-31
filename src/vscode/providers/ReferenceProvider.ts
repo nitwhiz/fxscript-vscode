@@ -10,7 +10,7 @@ export class ReferenceProvider implements vscode.ReferenceProvider {
     context: vscode.ReferenceContext,
     _token: vscode.CancellationToken
   ): Promise<vscode.Location[] | undefined> {
-    const range = document.getWordRangeAtPosition(position, /%?[a-zA-Z0-9_-]+:?/);
+    const range = document.getWordRangeAtPosition(position, /[@%a-zA-Z0-9_-]+/);
     if (!range) {
       return undefined;
     }

@@ -1,12 +1,12 @@
-# MOVE_DIG2
+# MOVE_DIG
 @const move:dig
 
 @const move:fly
 
 const fStatusSleep      1 << 0
 const fStatusBurn       1 << 3
-const fStatusPoison     1 << 4 + MOVE_DIG
-const fStatusParalysis  1 << 5 + MOVE_DIG2
+const fStatusPoison     1 << 4
+const fStatusParalysis  1 << 5
 const fStatusFreeze     1 << 6
 
 const fStatusConfused   1 << 7

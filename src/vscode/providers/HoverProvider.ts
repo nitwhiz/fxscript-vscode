@@ -9,7 +9,7 @@ export class HoverProvider implements vscode.HoverProvider {
     position: vscode.Position,
     _token: vscode.CancellationToken
   ): Promise<vscode.Hover | undefined> {
-    const range = document.getWordRangeAtPosition(position, /%?[a-zA-Z0-9_-]+:?/);
+    const range = document.getWordRangeAtPosition(position, /[@%a-zA-Z0-9_-]+/);
     if (!range) {
       return undefined;
     }

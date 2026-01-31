@@ -2,17 +2,20 @@ import * as vscode from 'vscode';
 import * as fs from 'fs';
 import { Lexer } from '../core/Lexer';
 import { Parser } from '../core/Parser';
-import { SymbolTable } from '../core/SymbolTable';
+import { SymbolTable, SymbolType, SymbolDefinition } from '../core/SymbolTable';
+import { CommandRegistry } from './CommandRegistry';
 
 export class WorkspaceIndexer {
   private symbolTable: SymbolTable;
+  private commandRegistry?: CommandRegistry;
   private diagnosticsCollection?: vscode.DiagnosticCollection;
   private disposables: vscode.Disposable[] = [];
 
   private pendingChanges = new Map<string, NodeJS.Timeout>();
 
-  constructor(symbolTable: SymbolTable, diagnosticsCollection?: vscode.DiagnosticCollection) {
+  constructor(symbolTable: SymbolTable, commandRegistry?: CommandRegistry, diagnosticsCollection?: vscode.DiagnosticCollection) {
     this.symbolTable = symbolTable;
+    this.commandRegistry = commandRegistry;
     this.diagnosticsCollection = diagnosticsCollection;
     this.watchFiles();
     this.watchDocuments();
@@ -96,14 +99,103 @@ export class WorkspaceIndexer {
     const tokens = lexer.tokenize();
 
     this.symbolTable.clearFileSymbols(uri);
-    if (this.diagnosticsCollection) {
-      this.diagnosticsCollection.delete(uri);
-    }
-    const parser = new Parser(uri, tokens, this.symbolTable);
+    
+    const parser = new Parser(uri, tokens, this.symbolTable, this.commandRegistry);
     parser.parseSymbols();
     
+    const parserDiagnostics = parser.getDiagnostics();
+    this.diagnosticsByUriFromParser.set(uri.toString(), parserDiagnostics);
+
     if (this.diagnosticsCollection) {
-      this.diagnosticsCollection.set(uri, parser.getDiagnostics());
+      this.diagnosticsCollection.set(uri, parserDiagnostics);
+    }
+
+    // Trigger re-validation of all files because symbols might have changed
+    this.revalidateAll();
+  }
+
+  private diagnosticsByUriFromParser = new Map<string, vscode.Diagnostic[]>();
+
+  private revalidateAll() {
+    if (this.pendingRevalidation) {
+        clearTimeout(this.pendingRevalidation);
+    }
+    this.pendingRevalidation = setTimeout(() => {
+        this.validateWorkspace();
+    }, 500);
+  }
+
+  private pendingRevalidation?: NodeJS.Timeout;
+
+  private validateWorkspace() {
+    if (!this.diagnosticsCollection) {
+        return;
+    }
+
+    const allRefs = this.symbolTable.getAllReferences();
+    const diagnosticsByUri = new Map<string, vscode.Diagnostic[]>();
+
+    for (const { name, references } of allRefs) {
+        const symbols = this.symbolTable.getSymbols(name);
+        const isBuiltIn = ["set", "goto", "call", "ret", "jumpIf"].includes(name);
+        const exists = symbols.length > 0 || (this.commandRegistry?.hasIdentifier(name) ?? false) || (this.commandRegistry?.getCommand(name) !== undefined) || isBuiltIn;
+
+        if (!exists) {
+            for (const ref of references) {
+                const uriString = ref.uri.toString();
+                let diagnostics = diagnosticsByUri.get(uriString) || [];
+                
+                let message = `Symbol '${name}' not found`;
+                if (ref.expectedType !== undefined) {
+                    const typeStr = SymbolType[ref.expectedType].toLowerCase();
+                    message = `${typeStr.charAt(0).toUpperCase() + typeStr.slice(1)} '${name}' not found`;
+                }
+
+                diagnostics.push(new vscode.Diagnostic(
+                    ref.range,
+                    message,
+                    vscode.DiagnosticSeverity.Error
+                ));
+                diagnosticsByUri.set(uriString, diagnostics);
+            }
+        }
+    }
+
+    // Also check for workspace-wide variable redeclaration
+    const allSymbols = this.symbolTable.getAllSymbols();
+    const varsByName = new Map<string, SymbolDefinition[]>();
+    for (const s of allSymbols) {
+        if (s.type === SymbolType.VARIABLE) {
+            let list = varsByName.get(s.name) || [];
+            list.push(s);
+            varsByName.set(s.name, list);
+        }
+    }
+
+    for (const [name, defs] of varsByName.entries()) {
+        if (defs.length > 1) {
+            for (const def of defs) {
+                const uriString = def.uri.toString();
+                let diagnostics = diagnosticsByUri.get(uriString) || [];
+                diagnostics.push(new vscode.Diagnostic(
+                    def.range,
+                    `Variable '${name}' is redeclared. First declared at ${defs[0].uri.fsPath}:${defs[0].range.start.line + 1}`,
+                    vscode.DiagnosticSeverity.Error
+                ));
+                diagnosticsByUri.set(uriString, diagnostics);
+            }
+        }
+    }
+
+    // Clear previous semantic diagnostics for all files that were not mentioned this time
+    // but were previously mentioned.
+    const allKnownUris = new Set([...this.diagnosticsByUriFromParser.keys(), ...diagnosticsByUri.keys()]);
+
+    for (const uriString of allKnownUris) {
+        const uri = vscode.Uri.parse(uriString);
+        const parserDiagnostics = this.diagnosticsByUriFromParser.get(uriString) || [];
+        const semanticDiagnostics = diagnosticsByUri.get(uriString) || [];
+        this.diagnosticsCollection.set(uri, [...parserDiagnostics, ...semanticDiagnostics]);
     }
   }
 

@@ -9,7 +9,7 @@ export class DefinitionProvider implements vscode.DefinitionProvider {
     position: vscode.Position,
     _token: vscode.CancellationToken
   ): Promise<vscode.Definition | undefined> {
-    const range = document.getWordRangeAtPosition(position, /%?[a-zA-Z0-9_-]+:?/);
+    const range = document.getWordRangeAtPosition(position, /[@%a-zA-Z0-9_-]+/);
     if (!range) {
       return undefined;
     }

@@ -8,12 +8,13 @@ import { HoverProvider } from './providers/HoverProvider';
 import { CompletionItemProvider } from './providers/CompletionItemProvider';
 import { ReferenceProvider } from './providers/ReferenceProvider';
 import { InlayHintsProvider } from './providers/InlayHintsProvider';
+import { SemanticTokensProvider, legend } from './providers/SemanticTokensProvider';
 
 export function activate(context: vscode.ExtensionContext) {
   const symbolTable = new SymbolTable();
   const commandRegistry = new CommandRegistry();
   const diagnosticsCollection = vscode.languages.createDiagnosticCollection('fxscript');
-  const workspaceIndexer = new WorkspaceIndexer(symbolTable, diagnosticsCollection);
+  const workspaceIndexer = new WorkspaceIndexer(symbolTable, commandRegistry, diagnosticsCollection);
 
   context.subscriptions.push(commandRegistry);
   context.subscriptions.push(workspaceIndexer);
@@ -58,6 +59,14 @@ export function activate(context: vscode.ExtensionContext) {
     vscode.languages.registerInlayHintsProvider(
       { language: 'fxscript', scheme: 'file' },
       new InlayHintsProvider(symbolTable)
+    )
+  );
+
+  context.subscriptions.push(
+    vscode.languages.registerDocumentSemanticTokensProvider(
+      { language: 'fxscript', scheme: 'file' },
+      new SemanticTokensProvider(symbolTable, commandRegistry),
+      legend
     )
   );
 

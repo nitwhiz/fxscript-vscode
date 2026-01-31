@@ -7,17 +7,27 @@ export class Parser {
   private pos: number = 0;
   private uri: vscode.Uri;
   private symbolTable: SymbolTable;
-  private lastGlobalLabel: string = "";
+  private commandRegistry?: any;
+  private currentMacroName: string | undefined;
+  private currentMacroArgs: Set<string> = new Set();
   private diagnostics: vscode.Diagnostic[] = [];
 
-  constructor(uri: vscode.Uri, tokens: Token[], symbolTable: SymbolTable) {
+  private lastGlobalLabel: string = "";
+
+  constructor(uri: vscode.Uri, tokens: Token[], symbolTable: SymbolTable, commandRegistry?: any) {
     this.uri = uri;
     this.tokens = tokens;
     this.symbolTable = symbolTable;
+    this.commandRegistry = commandRegistry;
   }
 
   public getDiagnostics(): vscode.Diagnostic[] {
     return this.diagnostics;
+  }
+
+  private isBuiltInCommand(name: string): boolean {
+    const builtIn = ["set", "goto", "call", "ret", "jumpIf"];
+    return builtIn.includes(name);
   }
 
   public parseSymbols() {
@@ -25,18 +35,20 @@ export class Parser {
       const token = this.peek();
 
       if (token.type === TokenType.KEYWORD) {
-        if (token.value === 'var') {
-          this.parseVar();
-        } else if (token.value === 'const') {
-          this.parseConst();
-        } else if (token.value === 'macro') {
-          this.parseMacro();
-        } else {
-          // It's a command like set, goto, etc.
-          this.advance();
-          this.parseCommandArguments();
-        }
-      } else if (token.type === TokenType.LABEL) {
+          if (token.value === 'var') {
+            this.parseVar();
+          } else if (token.value === 'const') {
+            this.parseConst();
+          } else if (token.value === 'macro') {
+            this.parseMacro();
+          } else if (token.value === 'endmacro') {
+            this.advance();
+          } else {
+            // It's a command like set, goto, etc.
+            const commandToken = this.advance();
+            this.parseCommandArguments(commandToken.value);
+          }
+        } else if (token.type === TokenType.LABEL) {
         this.parseLabel();
       } else if (token.type === TokenType.LOCAL_LABEL) {
         this.parseLocalLabel();
@@ -44,63 +56,194 @@ export class Parser {
         this.parseSpecialConst();
       } else if (token.type === TokenType.DIRECTIVE && token.value.startsWith('@const')) {
         this.parseSpecialConstDirectly();
-      } else if (token.type === (TokenType.IDENTIFIER as any) || token.type === (TokenType.LABEL as any)) {
-        // Potential macro call or command
-        let name = token.value;
-        if (name.endsWith(':')) {
-            name = name.slice(0, -1);
-        }
-        
-        // Check if it's a known command or if it's followed by arguments on the same line
-        const currentToken = this.advance();
-        this.symbolTable.addReference({
-          name: name,
-          uri: this.uri,
-          range: this.tokenToRange(currentToken)
-        });
-        this.parseCommandArguments();
+      } else if (token.type === TokenType.DIRECTIVE && token.value.startsWith('@include')) {
+          this.advance(); // Just consume it for now
+        } else if (token.type as any === TokenType.IDENTIFIER || token.type as any === TokenType.LABEL || token.type as any === TokenType.KEYWORD) {
+          // Potential macro call or command
+          let name = token.value;
+          if (name.endsWith(':')) {
+              name = name.slice(0, -1);
+          }
+
+          const currentToken = this.advance();
+          // Determine if it's a macro or a command
+          const isCommand = this.commandRegistry?.getCommand(name) || this.isBuiltInCommand(name);
+
+          this.symbolTable.addReference({
+            name: name,
+            uri: this.uri,
+            range: this.tokenToRange(currentToken),
+            expectedType: isCommand ? undefined : SymbolType.MACRO
+          });
+
+          this.parseCommandArguments(name);
+        } else if (token.type === TokenType.NEWLINE) {
+        this.advance();
+      } else if (token.type === TokenType.EOF) {
+        break;
       } else {
+        this.diagnostics.push(new vscode.Diagnostic(
+          this.tokenToRange(token),
+          `Unexpected token ${TokenType[token.type]} at start of line`,
+          vscode.DiagnosticSeverity.Error
+        ));
         this.advance();
       }
     }
   }
 
-  private parseCommandArguments() {
-    // Arguments are separated by commas and can be expressions.
-    // We mainly care about identifiers and local labels used as arguments.
+  private parseCommandArguments(commandName?: string) {
+    const command = commandName ? this.commandRegistry?.getCommand(commandName) : undefined;
+    let argIndex = 0;
+
     while (this.pos < this.tokens.length) {
       const token = this.peek();
       if (token.type === TokenType.NEWLINE || token.type === TokenType.EOF) {
-        // Only advance the position if it's a newline, so parseSymbols can see it too
-        // Wait, if we advance it here, parseSymbols will see the next token.
-        // Actually, parseSymbols also handles unknown tokens by advancing.
-        // It's better to NOT advance NEWLINE here so it acts as a delimiter for the command line.
         break;
       }
 
-      if (token.type === (TokenType.IDENTIFIER as any) || token.type === (TokenType.LABEL as any)) {
-        let name = token.value;
-        if (name.endsWith(':')) {
-            name = name.slice(0, -1);
+      if (token.type === TokenType.COMMA) {
+        this.advance();
+        argIndex++;
+        continue;
+      }
+
+      this.parseExpression(command, argIndex);
+    }
+  }
+
+  private isOperator(type: TokenType, value?: string): boolean {
+    if (type === TokenType.OPERATOR) {
+        return true;
+    }
+    if (type === TokenType.IDENTIFIER || type === TokenType.LABEL || type === TokenType.LOCAL_LABEL) {
+        const ops = ["+", "-", "*", "/", "&", "|", "^", "~", "<<", ">>", "==", "!=", "<", ">", "<=", ">=", "!", "&&", "||"];
+        if (value && ops.includes(value)) {
+            return true;
         }
-        this.symbolTable.addReference({
-          name: name,
-          uri: this.uri,
-          range: this.tokenToRange(token)
-        });
+    }
+    return false;
+  }
+
+  private parseExpression(command?: any, argIndex?: number) {
+    // Basic expression parser that consumes tokens until a comma or newline/EOF
+    // and records references
+    let parenCount = 0;
+    let lastTokenWasOperator = false;
+
+    // Expected type based on command definition
+    let expectedSymbolType: SymbolType | undefined;
+    if (command && command.args && argIndex !== undefined && argIndex < command.args.length) {
+      const argDef = command.args[argIndex] as any;
+      const argType = Object.values(argDef)[0] ? (Object.values(argDef)[0] as any).type : undefined;
+      if (argType === 'label') {
+        expectedSymbolType = SymbolType.LABEL;
+      } else if (argType === 'identifier') {
+        expectedSymbolType = SymbolType.VARIABLE; // Or CONSTANT, usually interchangeable in expressions
+      }
+    }
+
+    while (this.pos < this.tokens.length) {
+      const token = this.peek();
+      if (token.type === TokenType.NEWLINE || token.type === TokenType.EOF) {
+        break;
+      }
+      if (token.type === TokenType.COMMA && parenCount === 0) {
+        break;
+      }
+
+      const currentTokenPos = this.pos;
+
+      if (token.type === TokenType.LPAREN) {
+        parenCount++;
         this.advance();
-      } else if (token.type === TokenType.LOCAL_LABEL) {
-        const name = token.value.endsWith(':') ? token.value.slice(0, -1) : token.value;
-        const fullName = this.lastGlobalLabel ? `${this.lastGlobalLabel}${name}` : name;
-        this.symbolTable.addReference({
-          name: fullName,
-          uri: this.uri,
-          range: this.tokenToRange(token)
-        });
+        lastTokenWasOperator = false;
+      } else if (token.type === TokenType.RPAREN) {
+        parenCount--;
+        if (parenCount < 0) {
+          this.diagnostics.push(new vscode.Diagnostic(
+            this.tokenToRange(token),
+            `Unexpected closing parenthesis`,
+            vscode.DiagnosticSeverity.Error
+          ));
+          parenCount = 0;
+        }
         this.advance();
+        lastTokenWasOperator = false;
+      } else if (token.type === TokenType.IDENTIFIER || token.type === TokenType.LABEL || token.type === TokenType.NUMBER || token.type === TokenType.LOCAL_LABEL) {
+        if (token.type === TokenType.IDENTIFIER || token.type === TokenType.LABEL) {
+            let name = token.value;
+            if (name.endsWith(':')) {
+                name = name.slice(0, -1);
+            }
+            
+            // Check if it is an operator masquerading as an identifier
+            if (this.isOperator(token.type, name)) {
+                this.advance();
+                lastTokenWasOperator = true;
+                if (name === "!" || name === "~") {
+                    lastTokenWasOperator = true;
+                }
+                continue;
+            }
+
+            if (!this.currentMacroArgs.has(name)) {
+                const isCommand = this.commandRegistry?.getCommand(name) || this.isBuiltInCommand(name);
+                const isIdentifier = this.commandRegistry?.hasIdentifier(name);
+
+                if (!isIdentifier) {
+                    this.symbolTable.addReference({
+                        name: name,
+                        uri: this.uri,
+                        range: this.tokenToRange(token),
+                        expectedType: isCommand ? undefined : expectedSymbolType
+                    });
+                }
+            }
+        } else if (token.type === TokenType.LOCAL_LABEL) {
+            const name = token.value.endsWith(':') ? token.value.slice(0, -1) : token.value;
+            const prefix = this.currentMacroName || this.lastGlobalLabel;
+            const fullName = prefix ? `${prefix}${name}` : name;
+            this.symbolTable.addReference({
+                name: fullName,
+                uri: this.uri,
+                range: this.tokenToRange(token),
+                expectedType: SymbolType.LABEL
+            });
+        }
+        this.advance();
+        lastTokenWasOperator = false;
+      } else if (this.isOperator(token.type, token.value)) {
+        const opToken = this.advance();
+        lastTokenWasOperator = true;
+
+        // Unary operators don't need a preceding operand
+        if (opToken.value === "!" || opToken.value === "~") {
+            lastTokenWasOperator = true; // Still expecting something after it
+        }
       } else {
         this.advance();
       }
+
+      if (currentTokenPos === this.pos) {
+          this.advance(); // Safety break
+      }
+    }
+
+    if (parenCount > 0) {
+      this.diagnostics.push(new vscode.Diagnostic(
+        this.tokenToRange(this.tokens[this.pos - 1]),
+        `Missing ${parenCount} closing parenthesis`,
+        vscode.DiagnosticSeverity.Error
+      ));
+    }
+
+    if (lastTokenWasOperator) {
+        this.diagnostics.push(new vscode.Diagnostic(
+            this.tokenToRange(this.tokens[this.pos - 1]),
+            `Incomplete expression: expected operand at end of expression`,
+            vscode.DiagnosticSeverity.Error
+        ));
     }
   }
 
@@ -137,7 +280,7 @@ export class Parser {
         range: this.tokenToRange(nameToken)
       });
       // Parse the expression to find references
-      this.parseCommandArguments();
+      this.parseExpression();
     }
   }
 
@@ -147,34 +290,68 @@ export class Parser {
     if (nameToken) {
       const macroName = nameToken.value;
       const startLine = nameToken.line;
-      
+      this.currentMacroName = macroName;
+      this.currentMacroArgs.clear();
+
       this.symbolTable.addSymbol({
         name: macroName,
         type: SymbolType.MACRO,
         uri: this.uri,
         range: this.tokenToRange(nameToken)
       });
-      
+
       // Macros can have arguments on the same line
-      this.parseCommandArguments();
+      while (this.pos < this.tokens.length) {
+        const token = this.peek();
+        if (token.type === TokenType.NEWLINE || token.type === TokenType.EOF) {
+          break;
+        }
+        if (token.type === TokenType.IDENTIFIER && token.value.startsWith('$')) {
+          this.currentMacroArgs.add(token.value);
+          this.advance();
+        } else if (token.type === TokenType.COMMA) {
+          this.advance();
+        } else {
+          // Fallback or other tokens
+          this.advance();
+        }
+      }
 
       // Parse until endmacro, handle local labels within
       while (this.pos < this.tokens.length) {
         const t = this.peek();
-        if (t.type === TokenType.KEYWORD && t.value === 'endmacro') {
-          // Update the macro symbol with its full scope
-          const endMacroToken = this.advance();
-          const macroSymbols = this.symbolTable.getSymbols(macroName);
-          const macroDef = macroSymbols.find(s => s.uri.toString() === this.uri.toString() && s.range.start.line === startLine);
-          if (macroDef) {
-            macroDef.scopeRange = new vscode.Range(
-              new vscode.Position(startLine, nameToken.character),
-              new vscode.Position(endMacroToken.line, endMacroToken.character + endMacroToken.length)
-            );
+        if (t.type === TokenType.KEYWORD) {
+          if (t.value === 'endmacro') {
+            // Update the macro symbol with its full scope
+            const endMacroToken = this.advance();
+            const macroSymbols = this.symbolTable.getSymbols(macroName);
+            const macroDef = macroSymbols.find(s => s.uri.toString() === this.uri.toString() && s.range.start.line === startLine);
+            if (macroDef) {
+              macroDef.scopeRange = new vscode.Range(
+                new vscode.Position(startLine, nameToken.character),
+                new vscode.Position(endMacroToken.line, endMacroToken.character + endMacroToken.length)
+              );
+            }
+            break;
+          } else if (t.value === 'var') {
+            this.parseVar();
+          } else if (t.value === 'const') {
+            this.parseConst();
+          } else {
+            const currentToken = this.advance();
+            const isCommand = this.commandRegistry?.getCommand(t.value) || this.isBuiltInCommand(t.value);
+            
+            if (!this.currentMacroArgs.has(t.value)) {
+              this.symbolTable.addReference({
+                name: t.value,
+                uri: this.uri,
+                range: this.tokenToRange(currentToken),
+                expectedType: isCommand ? undefined : SymbolType.MACRO
+              });
+            }
+            this.parseCommandArguments(t.value);
           }
-          break;
-        }
-        if (t.type === TokenType.LOCAL_LABEL) {
+        } else if (t.type === TokenType.LOCAL_LABEL) {
           const name = t.value.endsWith(':') ? t.value.slice(0, -1) : t.value;
           const fullName = `${macroName}${name}`;
           if (t.value.endsWith(':')) {
@@ -189,40 +366,80 @@ export class Parser {
             this.symbolTable.addReference({
               name: fullName,
               uri: this.uri,
-              range: this.tokenToRange(t)
+              range: this.tokenToRange(t),
+              expectedType: SymbolType.LABEL
             });
           }
           this.advance();
-        } else if (t.type === (TokenType.IDENTIFIER as any) || t.type === (TokenType.LABEL as any)) {
+          // Resetting lastGlobalLabel to avoid carrying it over into the macro if not needed
+          // though inside macro it shouldn't matter as currentMacroName takes precedence.
+        } else if (t.type === TokenType.IDENTIFIER || t.type === TokenType.LABEL) {
           let name = t.value;
           if (name.endsWith(':')) {
             name = name.slice(0, -1);
+            this.symbolTable.addSymbol({
+              name: name,
+              type: SymbolType.LABEL,
+              uri: this.uri,
+              range: this.tokenToRange(t)
+            });
+            this.lastGlobalLabel = name;
+            this.advance();
+            this.parseCommandArguments();
+          } else {
+            const currentToken = this.advance();
+            const isCommand = this.commandRegistry?.getCommand(name) || this.isBuiltInCommand(name);
+            
+            if (!this.currentMacroArgs.has(name)) {
+                this.symbolTable.addReference({
+                  name: name,
+                  uri: this.uri,
+                  range: this.tokenToRange(currentToken),
+                  expectedType: isCommand ? undefined : SymbolType.MACRO
+                });
+            }
+            this.parseCommandArguments(name);
           }
-          const currentToken = this.advance();
-          this.symbolTable.addReference({
-            name: name,
-            uri: this.uri,
-            range: this.tokenToRange(currentToken)
-          });
-          this.parseCommandArguments();
+        } else if (t.type === TokenType.DIRECTIVE && t.value.startsWith('@include')) {
+          this.advance();
+        } else if (t.type === TokenType.NEWLINE) {
+          this.advance();
         } else {
+          this.diagnostics.push(new vscode.Diagnostic(
+            this.tokenToRange(t),
+            `Unexpected token ${TokenType[t.type]} at start of line`,
+            vscode.DiagnosticSeverity.Error
+          ));
           this.advance();
         }
       }
+      this.currentMacroName = undefined;
+      this.currentMacroArgs.clear();
     }
   }
 
   private parseLabel() {
     const token = this.advance();
-    const name = token.value.endsWith(':') ? token.value.slice(0, -1) : token.value;
+    let name = token.value.endsWith(':') ? token.value.slice(0, -1) : token.value;
+
+    const existing = this.symbolTable.getSymbols(name);
+    if (existing.some(s => s.uri.toString() === this.uri.toString() && s.type === SymbolType.LABEL)) {
+        this.diagnostics.push(new vscode.Diagnostic(
+            this.tokenToRange(token),
+            `Label '${name}' is already defined in this file`,
+            vscode.DiagnosticSeverity.Error
+        ));
+    }
+
     this.lastGlobalLabel = name;
+
     this.symbolTable.addSymbol({
       name: name,
       type: SymbolType.LABEL,
       uri: this.uri,
       range: this.tokenToRange(token)
     });
-    
+
     // Check for references on the same line (unlikely for a label definition, but keep it consistent)
     this.parseCommandArguments();
   }
@@ -230,7 +447,8 @@ export class Parser {
   private parseLocalLabel() {
     const token = this.advance();
     const name = token.value.endsWith(':') ? token.value.slice(0, -1) : token.value;
-    const fullName = this.lastGlobalLabel ? `${this.lastGlobalLabel}${name}` : name;
+    const prefix = this.currentMacroName || this.lastGlobalLabel;
+    const fullName = prefix ? `${prefix}${name}` : name;
     if (token.value.endsWith(':')) {
         this.symbolTable.addSymbol({
             name: fullName,
@@ -243,17 +461,18 @@ export class Parser {
         this.symbolTable.addReference({
             name: fullName,
             uri: this.uri,
-            range: this.tokenToRange(token)
+            range: this.tokenToRange(token),
+            expectedType: SymbolType.LABEL
         });
     }
-    
+
     // Check for references on the same line
     this.parseCommandArguments();
   }
 
   private parseSpecialConst() {
     const commentToken = this.advance();
-    
+
     // Skip newlines between comment and directive
     while (this.pos < this.tokens.length && this.peek().type === TokenType.NEWLINE) {
       this.advance();
@@ -265,7 +484,7 @@ export class Parser {
         if (commentParts.length > 0) {
             const runtimeName = commentParts[0];
             const directiveValue = nextToken.value.substring(6).trim(); // Skip "@const"
-            
+
             // Add the directive value as a symbol (so we can find it)
             this.symbolTable.addSymbol({
                 name: directiveValue,
@@ -318,7 +537,7 @@ export class Parser {
     if (t.type === type) {
       return this.advance();
     }
-    
+
     // Add diagnostic for unexpected token
     if (t.type !== TokenType.EOF) {
         this.diagnostics.push(new vscode.Diagnostic(
