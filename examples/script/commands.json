@@ -3,13 +3,21 @@
     {
       "name": "rand",
       "args": [
-        { "variable": "identifier" }
+        {
+          "variable": {
+            "type": "identifier"
+          }
+        }
       ]
     },
     {
       "name": "accuracyCheck",
       "args": [
-        { "missedJumpPc": "label" }
+        {
+          "missedJumpPc": {
+            "type": "label"
+          }
+        }
       ]
     },
     {
