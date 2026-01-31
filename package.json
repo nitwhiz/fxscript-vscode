@@ -18,32 +18,6 @@
     "onLanguage:fxscript",
     "workspaceContains:**/commands.json"
   ],
-  "main": "./out/client/extension.js",
-  "contributes": {
-    "languages": [
-      {
-        "id": "fxscript",
-        "aliases": [
-          "FXScript",
-          "fxscript"
-        ],
-        "mimetypes": [
-          "text/x-fxscript"
-        ],
-        "extensions": [
-          ".fx"
-        ],
-        "configuration": "./language-configuration.json"
-      }
-    ],
-    "grammars": [
-      {
-        "language": "fxscript",
-        "scopeName": "source.fx",
-        "path": "./syntaxes/fxscript.tmLanguage.json"
-      }
-    ]
-  },
   "scripts": {
     "vscode:prepublish": "npm run build",
     "build": "tsc -p ./",
