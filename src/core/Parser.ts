@@ -49,6 +49,13 @@ export class Parser {
           } else {
             // It's a command like set, goto, etc.
             const commandToken = this.advance();
+
+            this.symbolTable.addReference({
+              name: commandToken.value,
+              uri: this.uri,
+              range: this.tokenToRange(commandToken)
+            });
+
             this.parseCommandArguments(commandToken.value);
             this.lastComment = undefined;
           }
@@ -81,7 +88,7 @@ export class Parser {
 
           // Labels cannot be used as commands.
           const isLabel = this.symbolTable.getSymbols(name).some(s => s.type === SymbolType.LABEL);
-          
+
           if (!isCommand && isLabel) {
             this.diagnostics.push(new vscode.Diagnostic(
               this.tokenToRange(currentToken),
@@ -254,7 +261,7 @@ export class Parser {
             if (name.endsWith(':')) {
                 name = name.slice(0, -1);
             }
-            
+
             // Check if it is an operator masquerading as an identifier
             if (this.isOperator(token.type, name)) {
                 this.advance();
@@ -446,7 +453,7 @@ export class Parser {
           } else {
             const currentToken = this.advance();
             const isCommand = this.commandRegistry?.getCommand(t.value) || this.isBuiltInCommand(t.value);
-            
+
             if (!this.currentMacroArgs.has(t.value)) {
               this.symbolTable.addReference({
                 name: t.value,
@@ -500,11 +507,11 @@ export class Parser {
           } else {
             const currentToken = this.advance();
             const isCommand = this.commandRegistry?.getCommand(name) || this.isBuiltInCommand(name);
-            
+
             if (!this.currentMacroArgs.has(name)) {
                 // Labels cannot be used as commands.
                 const isLabel = this.symbolTable.getSymbols(name).some(s => s.type === SymbolType.LABEL);
-                
+
                 if (!isCommand && isLabel) {
                   this.diagnostics.push(new vscode.Diagnostic(
                     this.tokenToRange(currentToken),

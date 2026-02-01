@@ -70,8 +70,9 @@ export class SemanticTokensProvider implements vscode.DocumentSemanticTokensProv
 
         for (const ref of references) {
             const name = ref.name;
-            // Check if it's a command call
+            // Check if it's a command call (custom or built-in)
             const isCustomCommand = this.commandRegistry.getCommand(name) !== undefined;
+            const isBuiltInCommand = ["set", "goto", "call", "ret", "jumpIf"].includes(name);
 
             // We also want to check if it's a macro call
             const symbols = this.symbolTable.getSymbols(name);
@@ -80,7 +81,7 @@ export class SemanticTokensProvider implements vscode.DocumentSemanticTokensProv
             const isConst = symbols.some(s => s.type === SymbolType.CONSTANT);
             const isVar = symbols.some(s => s.type === SymbolType.VARIABLE);
 
-            if (isCustomCommand) {
+            if (isCustomCommand || isBuiltInCommand) {
                 builder.push(ref.range, 'keyword');
             } else if (isMacro) {
                 builder.push(ref.range, 'keyword');

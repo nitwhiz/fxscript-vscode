@@ -62,11 +62,11 @@
         },
         {
           "name": "keyword.other.macro-call.fx",
-          "match": "^\\s*[a-zA-Z_][a-zA-Z0-9_-]*\\b"
+          "match": "\\b(set|goto|call|ret|jumpIf)\\b"
         },
         {
-          "name": "keyword.control.base-command.fx",
-          "match": "\\b(set|goto|call|ret|jumpIf)\\b"
+          "name": "keyword.other.macro-call.fx",
+          "match": "^\\s*[a-zA-Z_][a-zA-Z0-9_-]*\\b"
         }
       ]
     },
