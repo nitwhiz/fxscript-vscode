@@ -11,6 +11,7 @@ export class Parser {
   private currentMacroName: string | undefined;
   private currentMacroArgs: Set<string> = new Set();
   private diagnostics: vscode.Diagnostic[] = [];
+  private lastComment: string | undefined;
 
   private lastGlobalLabel: string = "";
 
@@ -41,23 +42,32 @@ export class Parser {
             this.parseConst();
           } else if (token.value === 'macro') {
             this.parseMacro();
+            this.lastComment = undefined;
           } else if (token.value === 'endmacro') {
             this.advance();
+            this.lastComment = undefined;
           } else {
             // It's a command like set, goto, etc.
             const commandToken = this.advance();
             this.parseCommandArguments(commandToken.value);
+            this.lastComment = undefined;
           }
         } else if (token.type === TokenType.LABEL) {
         this.parseLabel();
+        this.lastComment = undefined;
       } else if (token.type === TokenType.LOCAL_LABEL) {
         this.parseLocalLabel();
+        this.lastComment = undefined;
       } else if (token.type === TokenType.COMMENT) {
+        const commentValue = token.value.substring(1).trim();
+        this.lastComment = this.lastComment ? `${this.lastComment}\n${commentValue}` : commentValue;
         this.parseSpecialConst();
       } else if (token.type === TokenType.DIRECTIVE && token.value.startsWith('@const')) {
         this.parseSpecialConstDirectly();
+        this.lastComment = undefined;
       } else if (token.type === TokenType.DIRECTIVE && token.value.startsWith('@include')) {
           this.advance(); // Just consume it for now
+          this.lastComment = undefined;
         } else if (token.type as any === TokenType.IDENTIFIER || token.type as any === TokenType.LABEL || token.type as any === TokenType.KEYWORD) {
           // Potential macro call or command
           let name = token.value;
@@ -77,6 +87,7 @@ export class Parser {
           });
 
           this.parseCommandArguments(name);
+          this.lastComment = undefined;
         } else if (token.type === TokenType.NEWLINE) {
         this.advance();
       } else if (token.type === TokenType.EOF) {
@@ -327,9 +338,11 @@ export class Parser {
         name: nameToken.value,
         type: SymbolType.VARIABLE,
         uri: this.uri,
-        range: this.tokenToRange(nameToken)
+        range: this.tokenToRange(nameToken),
+        documentation: this.lastComment
       });
     }
+    this.lastComment = undefined;
   }
 
   private parseConst() {
@@ -340,11 +353,13 @@ export class Parser {
         name: nameToken.value,
         type: SymbolType.CONSTANT,
         uri: this.uri,
-        range: this.tokenToRange(nameToken)
+        range: this.tokenToRange(nameToken),
+        documentation: this.lastComment
       });
       // Parse the expression to find references
       this.parseExpression();
     }
+    this.lastComment = undefined;
   }
 
   private parseMacro() {
@@ -375,7 +390,8 @@ export class Parser {
         type: SymbolType.MACRO,
         uri: this.uri,
         range: this.tokenToRange(nameToken),
-        argCount: argCount
+        argCount: argCount,
+        documentation: this.lastComment
       });
 
       // Macros can have arguments on the same line
@@ -438,8 +454,10 @@ export class Parser {
               type: SymbolType.LABEL,
               uri: this.uri,
               range: this.tokenToRange(t),
-              localName: name
+              localName: name,
+              documentation: this.lastComment
             });
+            this.lastComment = undefined;
           } else {
             this.symbolTable.addReference({
               name: fullName,
@@ -447,6 +465,7 @@ export class Parser {
               range: this.tokenToRange(t),
               expectedType: SymbolType.LABEL
             });
+            this.lastComment = undefined;
           }
           this.advance();
           // Resetting lastGlobalLabel to avoid carrying it over into the macro if not needed
@@ -459,9 +478,11 @@ export class Parser {
               name: name,
               type: SymbolType.LABEL,
               uri: this.uri,
-              range: this.tokenToRange(t)
+              range: this.tokenToRange(t),
+              documentation: this.lastComment
             });
             this.lastGlobalLabel = name;
+            this.lastComment = undefined;
             this.advance();
             this.parseCommandArguments();
           } else {
@@ -477,10 +498,16 @@ export class Parser {
                 });
             }
             this.parseCommandArguments(name);
+            this.lastComment = undefined;
           }
         } else if (t.type === TokenType.DIRECTIVE && t.value.startsWith('@include')) {
           this.advance();
+          this.lastComment = undefined;
         } else if (t.type === TokenType.NEWLINE) {
+          this.advance();
+        } else if (t.type === TokenType.COMMENT) {
+          const commentValue = t.value.substring(1).trim();
+          this.lastComment = this.lastComment ? `${this.lastComment}\n${commentValue}` : commentValue;
           this.advance();
         } else {
           this.diagnostics.push(new vscode.Diagnostic(
@@ -489,6 +516,7 @@ export class Parser {
             vscode.DiagnosticSeverity.Error
           ));
           this.advance();
+          this.lastComment = undefined;
         }
       }
       this.currentMacroName = undefined;
@@ -515,7 +543,8 @@ export class Parser {
       name: name,
       type: SymbolType.LABEL,
       uri: this.uri,
-      range: this.tokenToRange(token)
+      range: this.tokenToRange(token),
+      documentation: this.lastComment
     });
 
     // Check for references on the same line (unlikely for a label definition, but keep it consistent)
@@ -533,7 +562,8 @@ export class Parser {
             type: SymbolType.LABEL,
             uri: this.uri,
             range: this.tokenToRange(token),
-            localName: name
+            localName: name,
+            documentation: this.lastComment
         });
     } else {
         this.symbolTable.addReference({
