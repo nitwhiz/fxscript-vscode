@@ -391,6 +391,7 @@ export class Parser {
       this.currentMacroArgs.clear();
 
       let argCount = 0;
+      const args: string[] = [];
       // Macros can have arguments on the same line
       let tempPos = this.pos;
       while (tempPos < this.tokens.length) {
@@ -400,6 +401,7 @@ export class Parser {
         }
         if (token.type === TokenType.IDENTIFIER && token.value.startsWith('$')) {
           argCount++;
+          args.push(token.value);
         }
         tempPos++;
       }
@@ -410,6 +412,7 @@ export class Parser {
         uri: this.uri,
         range: this.tokenToRange(nameToken),
         argCount: argCount,
+        args: args,
         documentation: this.lastComment
       });
 

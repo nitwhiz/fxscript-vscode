@@ -22,12 +22,24 @@ export class HoverProvider implements vscode.HoverProvider {
     }
 
     let word = document.getText(range);
+    const contextPrefix = this.symbolTable.getContextPrefix(document.uri, position);
+
+    // If it's a macro argument ($arg), we can try to find the macro it belongs to
+    if (word.startsWith('$') && contextPrefix) {
+      const macroDefs = this.symbolTable.getSymbols(contextPrefix);
+      const macroDef = macroDefs.find(s => s.scopeRange?.contains(position));
+      if (macroDef && macroDef.args?.includes(word)) {
+        let contents = `**${word}**\n\nMacro argument of \`${macroDef.name}\``;
+        return new vscode.Hover(new vscode.MarkdownString(contents));
+      }
+    }
+
     if (word.endsWith(':')) {
       word = word.slice(0, -1);
     }
 
     let symbols = this.symbolTable.getSymbols(word);
-    
+
     // Fallback for local labels
     if (word.startsWith('%')) {
         const contextPrefix = this.symbolTable.getContextPrefix(document.uri, position);
@@ -38,7 +50,7 @@ export class HoverProvider implements vscode.HoverProvider {
                 symbols = qualifiedSymbols;
             }
         }
-        
+
         if (symbols.length === 0) {
             const allSymbols = this.symbolTable.getAllSymbols();
             symbols = allSymbols.filter(s => s.localName === word);

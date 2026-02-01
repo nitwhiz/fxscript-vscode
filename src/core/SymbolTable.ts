@@ -17,6 +17,7 @@ export interface SymbolDefinition {
   localName?: string;
   scopeRange?: vscode.Range; // For macros, to define their internal scope
   argCount?: number;
+  args?: string[];
 }
 
 export interface SymbolReference {

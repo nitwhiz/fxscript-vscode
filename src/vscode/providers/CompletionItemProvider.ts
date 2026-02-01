@@ -75,6 +75,22 @@ export class CompletionItemProvider implements vscode.CompletionItemProvider {
     // Determine context for local labels
     const contextPrefix = this.symbolTable.getContextPrefix(document.uri, position);
 
+    // 5. Suggest Macro Arguments if inside a macro
+    if (contextPrefix) {
+      const macroDefs = this.symbolTable.getSymbols(contextPrefix);
+      const macroDef = macroDefs.find(s => s.type === SymbolType.MACRO && s.uri.toString() === document.uri.toString() && s.scopeRange?.contains(position));
+      if (macroDef && macroDef.args) {
+        for (const arg of macroDef.args) {
+          const item = new vscode.CompletionItem(arg, vscode.CompletionItemKind.Variable);
+          if (wordRange) {
+            item.range = wordRange;
+          }
+          item.detail = `Macro argument of ${macroDef.name}`;
+          items.push(item);
+        }
+      }
+    }
+
     for (const s of symbols) {
       // Don't suggest raw @const lookup values (those containing a colon)
       if (s.name.includes(':')) {
