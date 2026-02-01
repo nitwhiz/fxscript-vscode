@@ -14,6 +14,14 @@ export class CompletionItemProvider implements vscode.CompletionItemProvider {
     _token: vscode.CancellationToken,
     _context: vscode.CompletionContext
   ): Promise<vscode.CompletionItem[]> {
+    const lineText = document.lineAt(position.line).text;
+    const lineUntilCursor = lineText.substring(0, position.character);
+
+    // If there's a '#' before the cursor on the current line, we're in a comment.
+    if (lineUntilCursor.includes('#')) {
+      return [];
+    }
+
     const items: vscode.CompletionItem[] = [];
 
     const wordRange = document.getWordRangeAtPosition(position, /[@%a-zA-Z0-9_-]+/);

@@ -10,6 +10,13 @@ export class ReferenceProvider implements vscode.ReferenceProvider {
     context: vscode.ReferenceContext,
     _token: vscode.CancellationToken
   ): Promise<vscode.Location[] | undefined> {
+    const lineText = document.lineAt(position.line).text;
+    const lineUntilCursor = lineText.substring(0, position.character);
+
+    if (lineUntilCursor.includes('#')) {
+      return undefined;
+    }
+
     const range = document.getWordRangeAtPosition(position, /[@%a-zA-Z0-9_-]+/);
     if (!range) {
       return undefined;
