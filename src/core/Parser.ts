@@ -90,6 +90,7 @@ export class Parser {
           this.lastComment = undefined;
         } else if (token.type === TokenType.NEWLINE) {
         this.advance();
+        this.lastComment = undefined;
       } else if (token.type === TokenType.EOF) {
         break;
       } else {

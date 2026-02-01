@@ -65,7 +65,7 @@ export function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(
     vscode.languages.registerDocumentSemanticTokensProvider(
       { language: 'fxscript', scheme: 'file' },
-      new SemanticTokensProvider(symbolTable, commandRegistry),
+      new SemanticTokensProvider(symbolTable, commandRegistry, workspaceIndexer.onDidChangeSemanticTokens),
       legend
     )
   );

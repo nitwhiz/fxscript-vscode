@@ -55,7 +55,7 @@ export class WorkspaceIndexer {
     const timeout = setTimeout(() => {
       this.pendingChanges.delete(uriString);
       this.indexDocument(document);
-    }, 300); // 300ms debounce
+    }, 100); // reduced from 300ms
 
     this.pendingChanges.set(uriString, timeout);
   }
@@ -114,6 +114,9 @@ export class WorkspaceIndexer {
     this.revalidateAll();
   }
 
+  private onDidChangeSemanticTokensEmitter = new vscode.EventEmitter<void>();
+  public onDidChangeSemanticTokens = this.onDidChangeSemanticTokensEmitter.event;
+
   private diagnosticsByUriFromParser = new Map<string, vscode.Diagnostic[]>();
 
   private revalidateAll() {
@@ -122,7 +125,8 @@ export class WorkspaceIndexer {
     }
     this.pendingRevalidation = setTimeout(() => {
         this.validateWorkspace();
-    }, 500);
+        this.onDidChangeSemanticTokensEmitter.fire();
+    }, 200); // reduced from 500ms
   }
 
   private pendingRevalidation?: NodeJS.Timeout;

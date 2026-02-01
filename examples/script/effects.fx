@@ -1,3 +1,4 @@
+# standard move hit effect with accuracy check and canceler
 macro MoveHit
   AccuracyCheck
   Canceler
