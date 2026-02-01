@@ -245,7 +245,7 @@ export class Lexer {
       return this.createToken(TokenType.LABEL, value);
     }
 
-    const keywords = ["var", "const", "macro", "endmacro", "set", "goto", "call", "ret", "jumpIf"];
+    const keywords = ["var", "const", "macro", "endmacro", "set", "goto", "call", "ret", "exit", "jumpIf"];
     if (keywords.includes(value)) {
       return this.createToken(TokenType.KEYWORD, value);
     }

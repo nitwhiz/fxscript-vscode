@@ -27,7 +27,7 @@ export class Parser {
   }
 
   private isBuiltInCommand(name: string): boolean {
-    const builtIn = ["set", "goto", "call", "ret", "jumpIf"];
+    const builtIn = ["set", "goto", "call", "ret", "exit", "jumpIf"];
     return builtIn.includes(name);
   }
 
@@ -173,6 +173,7 @@ export class Parser {
             expectedArgCount = 2;
             break;
           case 'ret':
+          case 'exit':
             expectedArgCount = 0;
             break;
         }

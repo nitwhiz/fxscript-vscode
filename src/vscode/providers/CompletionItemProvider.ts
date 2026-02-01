@@ -48,7 +48,7 @@ export class CompletionItemProvider implements vscode.CompletionItemProvider {
       }
 
       // 2. Suggest Base Commands
-      const baseCommands = ['set', 'goto', 'call', 'ret', 'jumpIf'];
+      const baseCommands = ['set', 'goto', 'call', 'ret', 'exit', 'jumpIf'];
       for (const cmd of baseCommands) {
         const item = new vscode.CompletionItem(cmd, vscode.CompletionItemKind.Keyword);
         if (wordRange) {

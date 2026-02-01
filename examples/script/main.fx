@@ -12,3 +12,4 @@ BeforeTurn:
 
 End:
   # end
+  exit
