@@ -138,7 +138,8 @@ export class WorkspaceIndexer {
     for (const { name, references } of allRefs) {
         const symbols = this.symbolTable.getSymbols(name);
         const isBuiltIn = ["set", "goto", "call", "ret", "jumpIf"].includes(name);
-        const exists = symbols.length > 0 || (this.commandRegistry?.hasIdentifier(name) ?? false) || (this.commandRegistry?.getCommand(name) !== undefined) || isBuiltIn;
+        const command = this.commandRegistry?.getCommand(name);
+        const exists = symbols.length > 0 || (this.commandRegistry?.hasIdentifier(name) ?? false) || (command !== undefined) || isBuiltIn;
 
         if (!exists) {
             for (const ref of references) {

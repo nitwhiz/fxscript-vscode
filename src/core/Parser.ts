@@ -245,14 +245,22 @@ export class Parser {
             if (!this.currentMacroArgs.has(name)) {
                 const isCommand = this.commandRegistry?.getCommand(name) || this.isBuiltInCommand(name);
                 const isIdentifier = this.commandRegistry?.hasIdentifier(name);
+                const isMacro = this.symbolTable.getSymbols(name).some(s => s.type === SymbolType.MACRO);
 
-                if (!isIdentifier) {
+                if (!isIdentifier && !isMacro) {
                     this.symbolTable.addReference({
                         name: name,
                         uri: this.uri,
                         range: this.tokenToRange(token),
                         expectedType: isCommand ? undefined : expectedSymbolType
                     });
+                } else if (isMacro) {
+                    // It's a macro being used in an expression/argument
+                    this.diagnostics.push(new vscode.Diagnostic(
+                        this.tokenToRange(token),
+                        `Macro '${name}' cannot be used as an argument`,
+                        vscode.DiagnosticSeverity.Error
+                    ));
                 }
             }
         } else if (token.type === TokenType.LOCAL_LABEL) {
