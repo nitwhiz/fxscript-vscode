@@ -51,7 +51,7 @@ export function activate(context: vscode.ExtensionContext) {
     vscode.languages.registerCompletionItemProvider(
       { language: 'fxscript', scheme: 'file' },
       new CompletionItemProvider(symbolTable, commandRegistry),
-      ',' // Trigger character
+      ',', ' ' // Trigger characters
     )
   );
 
