@@ -66,7 +66,7 @@
         },
         {
           "name": "keyword.other.macro-call.fx",
-          "match": "\\b(set|goto|call|ret|jumpIf|exit)\\b"
+          "match": "\\b(set|goto|call|ret|jumpIf|exit|push|pop)\\b"
         },
         {
           "name": "keyword.other.macro-call.fx",

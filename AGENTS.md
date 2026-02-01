@@ -44,7 +44,7 @@ FXScript is characterized by its instruction-oriented syntax, supporting macros,
     - **Calls**: Look like standard commands: `MacroName value1, value2`.
 - **Commands**:
     - `commandName arg1, arg2, ...` (Arguments are always separated by commas).
-    - **Base Commands**: `set`, `goto`, `call`, `ret`, `jumpIf`.
+    - **Base Commands**: `set`, `goto`, `call`, `ret`, `jumpIf`, `push`, `pop`.
     - **Custom Commands**: Dynamically loaded from `commands.json`.
 
 ### 2. Expressions & Operators
