@@ -37,8 +37,12 @@
     "directives": {
       "patterns": [
         {
-          "name": "keyword.control.include.fx",
-          "match": "@include\\b"
+          "match": "(@include)\\s+(.*)$",
+          "captures": {
+            "1": {
+              "name": "keyword.control.include.fx"
+            }
+          }
         },
         {
           "name": "keyword.other.const.fx",
