@@ -1,3 +1,5 @@
+import { getBuiltInCommandNames } from './BuiltInCommands';
+
 export enum TokenType {
   COMMENT,
   DIRECTIVE,
@@ -245,7 +247,7 @@ export class Lexer {
       return this.createToken(TokenType.LABEL, value);
     }
 
-    const keywords = ["var", "const", "macro", "endmacro", "set", "goto", "call", "ret", "exit", "jumpIf", "push", "pop"];
+    const keywords = ["var", "const", "macro", "endmacro", ...getBuiltInCommandNames()];
     if (keywords.includes(value)) {
       return this.createToken(TokenType.KEYWORD, value);
     }

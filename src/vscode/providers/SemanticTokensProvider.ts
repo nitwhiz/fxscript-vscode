@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import { SymbolTable, SymbolType } from '../../core/SymbolTable';
 import { CommandRegistry } from '../../workspace/CommandRegistry';
+import { isBuiltInCommand } from '../../core/BuiltInCommands';
 
 export const legend = new vscode.SemanticTokensLegend(
     ['keyword', 'variable', 'function', 'parameter'],
@@ -72,16 +73,16 @@ export class SemanticTokensProvider implements vscode.DocumentSemanticTokensProv
             const name = ref.name;
             // Check if it's a command call (custom or built-in)
             const isCustomCommand = this.commandRegistry.getCommand(name) !== undefined;
-            const isBuiltInCommand = ["set", "goto", "call", "ret", "exit", "jumpIf", "push", "pop"].includes(name);
+            const isBuiltIn = isBuiltInCommand(name);
 
-            // We also want to check if it's a macro call
+            // We also want to check if it's a mcro call
             const symbols = this.symbolTable.getSymbols(name);
             const isMacro = symbols.some(s => s.type === SymbolType.MACRO);
             const isLabel = symbols.some(s => s.type === SymbolType.LABEL);
             const isConst = symbols.some(s => s.type === SymbolType.CONSTANT);
             const isVar = symbols.some(s => s.type === SymbolType.VARIABLE);
 
-            if (isCustomCommand || isBuiltInCommand) {
+            if (isCustomCommand || isBuiltIn) {
                 builder.push(ref.range, 'keyword');
             } else if (isMacro) {
                 builder.push(ref.range, 'keyword');

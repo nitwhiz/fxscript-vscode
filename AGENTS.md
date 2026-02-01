@@ -144,7 +144,11 @@ To ensure the extension is maintainable and scalable, follow these architectural
 
 ### 7. Agent Remarks & Architectural Roadmap
 
-To ensure the extension is well-written, extensible, and maintainable, I propose the following architectural approach:
+#### Built-in Commands Centralization
+Built-in commands (like `set`, `goto`, etc.) are centralized in `src/core/BuiltInCommands.ts`. 
+When adding a new built-in command:
+1.  Add it to the `BUILT_IN_COMMANDS` constant in `src/core/BuiltInCommands.ts` with its name and expected argument count.
+2.  Update the `tmLanguage.json` file in `syntaxes/` to include the new command for initial syntax highlighting (before semantic tokens kick in).
 
 #### Structural Decoupling
 - **`src/core`**: Contains the pure logic for FXScript.

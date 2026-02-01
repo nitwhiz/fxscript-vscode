@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import { Token, TokenType } from './Lexer';
 import { SymbolTable, SymbolType } from './SymbolTable';
+import { isBuiltInCommand, BUILT_IN_COMMANDS } from './BuiltInCommands';
 
 export class Parser {
   private tokens: Token[] = [];
@@ -27,8 +28,7 @@ export class Parser {
   }
 
   private isBuiltInCommand(name: string): boolean {
-    const builtIn = ["set", "goto", "call", "ret", "exit", "jumpIf", "push", "pop"];
-    return builtIn.includes(name);
+    return isBuiltInCommand(name);
   }
 
   public parseSymbols() {
@@ -161,24 +161,7 @@ export class Parser {
       if (command) {
         expectedArgCount = command.args?.length || 0;
       } else if (this.isBuiltInCommand(commandName)) {
-        switch (commandName) {
-          case 'set':
-            expectedArgCount = 2;
-            break;
-          case 'goto':
-          case 'call':
-          case 'push':
-          case 'pop':
-            expectedArgCount = 1;
-            break;
-          case 'jumpIf':
-            expectedArgCount = 2;
-            break;
-          case 'ret':
-          case 'exit':
-            expectedArgCount = 0;
-            break;
-        }
+        expectedArgCount = BUILT_IN_COMMANDS[commandName]?.argCount ?? 0;
       } else {
         // Check if it's a macro
         const symbols = this.symbolTable.getSymbols(commandName);

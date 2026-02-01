@@ -3,6 +3,7 @@ import * as fs from 'fs';
 import { Lexer } from '../core/Lexer';
 import { Parser } from '../core/Parser';
 import { SymbolTable, SymbolType, SymbolDefinition } from '../core/SymbolTable';
+import { isBuiltInCommand } from '../core/BuiltInCommands';
 import { CommandRegistry } from './CommandRegistry';
 
 export class WorkspaceIndexer {
@@ -141,7 +142,7 @@ export class WorkspaceIndexer {
 
     for (const { name, references } of allRefs) {
         const symbols = this.symbolTable.getSymbols(name);
-        const isBuiltIn = ["set", "goto", "call", "ret", "exit", "jumpIf", "push", "pop"].includes(name);
+        const isBuiltIn = isBuiltInCommand(name);
         const command = this.commandRegistry?.getCommand(name);
         const exists = symbols.length > 0 || (this.commandRegistry?.hasIdentifier(name) ?? false) || (command !== undefined) || isBuiltIn;
 

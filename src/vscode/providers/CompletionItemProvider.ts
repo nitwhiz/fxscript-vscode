@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import { SymbolTable, SymbolType } from '../../core/SymbolTable';
 import { CommandRegistry } from '../../workspace/CommandRegistry';
+import { getBuiltInCommandNames } from '../../core/BuiltInCommands';
 
 export class CompletionItemProvider implements vscode.CompletionItemProvider {
   constructor(
@@ -48,7 +49,7 @@ export class CompletionItemProvider implements vscode.CompletionItemProvider {
       }
 
       // 2. Suggest Base Commands
-      const baseCommands = ['set', 'goto', 'call', 'ret', 'exit', 'jumpIf', 'push', 'pop'];
+      const baseCommands = getBuiltInCommandNames();
       for (const cmd of baseCommands) {
         const item = new vscode.CompletionItem(cmd, vscode.CompletionItemKind.Keyword);
         if (wordRange) {
