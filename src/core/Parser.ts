@@ -79,6 +79,17 @@ export class Parser {
           // Determine if it's a macro or a command
           const isCommand = this.commandRegistry?.getCommand(name) || this.isBuiltInCommand(name);
 
+          // Labels cannot be used as commands.
+          const isLabel = this.symbolTable.getSymbols(name).some(s => s.type === SymbolType.LABEL);
+          
+          if (!isCommand && isLabel) {
+            this.diagnostics.push(new vscode.Diagnostic(
+              this.tokenToRange(currentToken),
+              `'${name}' is a label and cannot be used as a command. Labels must be followed by a colon for declaration, or used as arguments.`,
+              vscode.DiagnosticSeverity.Error
+            ));
+          }
+
           this.symbolTable.addReference({
             name: name,
             uri: this.uri,
@@ -491,6 +502,17 @@ export class Parser {
             const isCommand = this.commandRegistry?.getCommand(name) || this.isBuiltInCommand(name);
             
             if (!this.currentMacroArgs.has(name)) {
+                // Labels cannot be used as commands.
+                const isLabel = this.symbolTable.getSymbols(name).some(s => s.type === SymbolType.LABEL);
+                
+                if (!isCommand && isLabel) {
+                  this.diagnostics.push(new vscode.Diagnostic(
+                    this.tokenToRange(currentToken),
+                    `'${name}' is a label and cannot be used as a command. Labels must be followed by a colon for declaration, or used as arguments.`,
+                    vscode.DiagnosticSeverity.Error
+                  ));
+                }
+
                 this.symbolTable.addReference({
                   name: name,
                   uri: this.uri,
