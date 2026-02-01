@@ -3,7 +3,7 @@ import { SymbolTable, SymbolType } from '../../core/SymbolTable';
 import { CommandRegistry } from '../../workspace/CommandRegistry';
 
 export const legend = new vscode.SemanticTokensLegend(
-    ['keyword', 'variable', 'function', 'parameter', 'macro'],
+    ['keyword', 'variable', 'function', 'parameter'],
     ['declaration', 'documentation']
 );
 
@@ -30,7 +30,7 @@ export class SemanticTokensProvider implements vscode.DocumentSemanticTokensProv
             if (symbol.type === SymbolType.LABEL) {
                 type = 'function';
             } else if (symbol.type === SymbolType.MACRO) {
-                type = 'macro';
+                type = 'keyword';
             } else if (symbol.type === SymbolType.CONSTANT) {
                 type = 'variable';
             }
@@ -83,7 +83,7 @@ export class SemanticTokensProvider implements vscode.DocumentSemanticTokensProv
             if (isCustomCommand) {
                 builder.push(ref.range, 'keyword');
             } else if (isMacro) {
-                builder.push(ref.range, 'macro');
+                builder.push(ref.range, 'keyword');
             } else if (isLabel) {
                 builder.push(ref.range, 'function');
             } else if (isConst || isVar) {
