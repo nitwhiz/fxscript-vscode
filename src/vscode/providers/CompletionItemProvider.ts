@@ -90,6 +90,9 @@ export class CompletionItemProvider implements vscode.CompletionItemProvider {
         } else {
           continue;
         }
+      } else if (s.type === SymbolType.LABEL && s.name.startsWith('_')) {
+        // Filter "external" labels (starting with underscore, but not local)
+        continue;
       }
 
       if (seenNames.has(s.name)) {

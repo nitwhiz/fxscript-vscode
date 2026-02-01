@@ -27,6 +27,7 @@ FXScript is characterized by its instruction-oriented syntax, supporting macros,
           (Renders as `const MOVE_DIG` at runtime).
 - **Labels**:
     - **Global Labels**: `LabelName:` (Definition) or `LabelName` (Usage).
+    - **External Labels**: Global labels starting with an underscore (e.g., `_ExternalLabel`). These are treated as normal global labels but are not suggested during code completion.
     - **Local Labels**: `%_LocalLabel:`.
         - Valid anywhere but typically used in macros or subroutines.
         - **Resolved Name**: 
@@ -105,6 +106,7 @@ const fStatusCombined   (fStatusSleep | fStatusBurn)
 #### Code Completion & Validation
 - **Context-Aware Suggestions**:
     - Suggest `label` names only for arguments of type `label` (e.g., `goto`, `call`).
+    - Exclude "external" labels (non-local labels starting with `_`) from suggestions.
     - Suggest `var`, `const` and global `identifiers` (predefined in the runtime, loaded from `commands.json`) for `identifier` types.
     - Suggest files for `@include`.
 - **Validation**:
