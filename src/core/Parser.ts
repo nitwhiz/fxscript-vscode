@@ -202,7 +202,7 @@ export class Parser {
         return true;
     }
     if (type === TokenType.IDENTIFIER || type === TokenType.LABEL || type === TokenType.LOCAL_LABEL) {
-        const ops = ["+", "-", "*", "/", "&", "|", "^", "~", "<<", ">>", "==", "!=", "<", ">", "<=", ">=", "!", "&&", "||"];
+        const ops = ["+", "-", "*", "/", "%", "&", "|", "^", "~", "<<", ">>", "==", "!=", "<", ">", "<=", ">=", "!", "&&", "||"];
         if (value && ops.includes(value)) {
             return true;
         }

@@ -75,7 +75,13 @@ export class Lexer {
     }
 
     if (char === '%') {
-      return this.readLocalLabel();
+      // Modulo operator or local label?
+      // Local label is followed by '_' or alpha
+      const next = this.peek(1);
+      if (next === '_' || this.isAlpha(next)) {
+        return this.readLocalLabel();
+      }
+      return this.consumeToken(TokenType.OPERATOR, "%");
     }
 
     if (char === ',') {
@@ -129,14 +135,14 @@ export class Lexer {
     while (this.pos < this.input.length && this.isAlpha(this.peek())) {
       value += this.advance();
     }
-    
+
     if (value === "@const" || value === "@include") {
       this.skipWhitespace();
       while (this.pos < this.input.length && this.peek() !== '\n' && this.peek() !== '#') {
         value += this.advance();
       }
     }
-    
+
     return this.createToken(TokenType.DIRECTIVE, value);
   }
 
@@ -161,7 +167,7 @@ export class Lexer {
     while (this.pos < this.input.length && this.isAlphaNumeric(this.peek())) {
       value += this.advance();
     }
-    
+
     if (this.peek() === ':') {
       value += this.advance();
       return this.createToken(TokenType.LOCAL_LABEL, value);
@@ -195,7 +201,7 @@ export class Lexer {
       if (this.peek() === '-') {
         // Look ahead to see if it's a label definition or followed by characters that make it likely a label usage.
         let isLabelPart = false;
-        
+
         // 1. Check if it's a label definition (colon later on same line)
         for (let i = 1; this.pos + i < this.input.length; i++) {
           const c = this.input[this.pos + i];
@@ -212,20 +218,20 @@ export class Lexer {
         // we might consider it part of an identifier.
         // However, 'x-1' should be 'x', '-', '1'.
         // 'My-Label' followed by a comma or newline or space could be a label.
-        
+
         if (!isLabelPart) {
           // If the next character is not a digit, and we have alpha chars after, it might be a label.
           // BUT, to be safe and match the user's "definition navigation still splits at '-'" complaint,
           // we should probably be more inclusive if it looks like a word.
-          
+
           const nextChar = this.peek(1);
           if (nextChar && (this.isAlpha(nextChar) && nextChar !== '-')) {
-             // It's like 'My-Label'. 
+             // It's like 'My-Label'.
              // We'll treat it as part of the identifier.
              isLabelPart = true;
           }
         }
-        
+
         if (!isLabelPart) {
           // It's likely an operator (e.g., 'x-1' or 'x - 1'), stop here.
           break;
@@ -233,7 +239,7 @@ export class Lexer {
       }
       value += this.advance();
     }
-    
+
     if (this.peek() === ':' && (this.pos === 0 || !this.isWhitespace(this.input[this.pos - 1]))) {
       value += this.advance();
       return this.createToken(TokenType.LABEL, value);
@@ -268,7 +274,7 @@ export class Lexer {
   private createToken(type: TokenType, value: string): Token {
     let tokenLine = this.line;
     let tokenChar = this.character - value.length;
-    
+
     if (type === TokenType.EOF) {
         tokenChar = this.character;
     } else if (type === TokenType.NEWLINE) {

@@ -101,11 +101,12 @@ export class ExpressionEvaluator {
 
   private parseMultiplicative(): number {
     let left = this.parseUnary();
-    while (this.peek().value === '*' || this.peek().value === '/') {
+    while (this.peek().value === '*' || this.peek().value === '/' || this.peek().value === '%') {
       const op = this.advance().value;
       const right = this.parseUnary();
       if (op === '*') left = left * right;
-      else left = left / right;
+      else if (op === '/') left = left / right;
+      else if (op === '%') left = left % right;
     }
     return left;
   }
