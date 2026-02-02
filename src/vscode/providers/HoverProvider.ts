@@ -16,7 +16,7 @@ export class HoverProvider implements vscode.HoverProvider {
       return undefined;
     }
 
-    const range = document.getWordRangeAtPosition(position, /[@%a-zA-Z0-9_-]+/);
+    const range = document.getWordRangeAtPosition(position, /[@%$a-zA-Z0-9_-]+/);
     if (!range) {
       return undefined;
     }
@@ -26,11 +26,12 @@ export class HoverProvider implements vscode.HoverProvider {
 
     // If it's a macro argument ($arg), we can try to find the macro it belongs to
     if (word.startsWith('$') && contextPrefix) {
-      const macroDefs = this.symbolTable.getSymbols(contextPrefix);
-      const macroDef = macroDefs.find(s => s.scopeRange?.contains(position));
-      if (macroDef && macroDef.args?.includes(word)) {
-        let contents = `**${word}**\n\nMacro argument of \`${macroDef.name}\``;
-        return new vscode.Hover(new vscode.MarkdownString(contents));
+      const macroName = contextPrefix;
+      const fullName = `${macroName}:${word}`;
+      const argSymbols = this.symbolTable.getSymbols(fullName);
+      if (argSymbols.length > 0) {
+          let contents = `**${word}**\n\nMacro argument of \`${macroName}\``;
+          return new vscode.Hover(new vscode.MarkdownString(contents));
       }
     }
 

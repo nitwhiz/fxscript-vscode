@@ -7,6 +7,7 @@ import { WorkspaceSymbolProvider } from './providers/WorkspaceSymbolProvider';
 import { HoverProvider } from './providers/HoverProvider';
 import { CompletionItemProvider } from './providers/CompletionItemProvider';
 import { ReferenceProvider } from './providers/ReferenceProvider';
+import { RenameProvider } from './providers/RenameProvider';
 import { InlayHintsProvider } from './providers/InlayHintsProvider';
 import { SemanticTokensProvider, legend } from './providers/SemanticTokensProvider';
 
@@ -31,6 +32,13 @@ export function activate(context: vscode.ExtensionContext) {
     vscode.languages.registerReferenceProvider(
       { language: 'fxscript', scheme: 'file' },
       new ReferenceProvider(symbolTable)
+    )
+  );
+
+  context.subscriptions.push(
+    vscode.languages.registerRenameProvider(
+      { language: 'fxscript', scheme: 'file' },
+      new RenameProvider(symbolTable)
     )
   );
 

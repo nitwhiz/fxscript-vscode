@@ -22,7 +22,7 @@ export class DefinitionProvider implements vscode.DefinitionProvider {
     }
 
     let word = document.getText(range);
-    
+
     // Normalize word
     if (word.endsWith(':')) {
         word = word.slice(0, -1);
@@ -42,6 +42,13 @@ export class DefinitionProvider implements vscode.DefinitionProvider {
         if (symbols.length === 0) {
             const allSymbols = this.symbolTable.getAllSymbols();
             symbols = allSymbols.filter(s => s.localName === word);
+        }
+    } else if (word.startsWith('$')) {
+        // Macro argument
+        const contextPrefix = this.symbolTable.getContextPrefix(document.uri, position);
+        if (contextPrefix) {
+            const fullName = `${contextPrefix}:${word}`;
+            symbols = this.symbolTable.getSymbols(fullName);
         }
     }
 

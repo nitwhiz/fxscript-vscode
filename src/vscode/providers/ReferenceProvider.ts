@@ -23,7 +23,7 @@ export class ReferenceProvider implements vscode.ReferenceProvider {
     }
 
     let word = document.getText(range);
-    
+
     // Normalize word
     if (word.endsWith(':')) {
         word = word.slice(0, -1);
@@ -33,8 +33,8 @@ export class ReferenceProvider implements vscode.ReferenceProvider {
 
     // Special case for @const lookups at the definition site
     if (document.lineAt(position.line).text.trim().startsWith('@const')) {
-        const symbolsAtPosition = this.symbolTable.getAllSymbols().filter(s => 
-            s.uri.toString() === document.uri.toString() && 
+        const symbolsAtPosition = this.symbolTable.getAllSymbols().filter(s =>
+            s.uri.toString() === document.uri.toString() &&
             s.range.contains(position) &&
             s.documentation?.startsWith('const ')
         );
@@ -43,24 +43,29 @@ export class ReferenceProvider implements vscode.ReferenceProvider {
         }
     }
 
-    // If it's a local label, we might need to qualify it
+    // Local labels
     if (word.startsWith('%')) {
-        // Try to find the context (last global label or macro)
-        // This is a simplification, ideally should use a more robust way
-        const allSymbols = this.symbolTable.getAllSymbols();
-        const matchingSymbols = allSymbols.filter(s => s.name.endsWith(word));
-        
-        if (matchingSymbols.length === 1) {
-            symbolName = matchingSymbols[0].name;
-        } else if (matchingSymbols.length > 1) {
-            // If multiple, try to find the one in the current file or closest scope
-            // For now, let's just use the first one or all of them if we were returning symbols
-            // but we need a single name to look up references.
-            // This is a known limitation of this simplified approach.
-            const currentFileSymbol = matchingSymbols.find(s => s.uri.toString() === document.uri.toString());
-            if (currentFileSymbol) {
-                symbolName = currentFileSymbol.name;
+        const contextPrefix = this.symbolTable.getContextPrefix(document.uri, position);
+        if (contextPrefix) {
+            symbolName = `${contextPrefix}${word}`;
+        } else {
+            // Fallback: search for unique local name if no context found
+            const allSymbols = this.symbolTable.getAllSymbols();
+            const matching = allSymbols.filter(s => s.name.endsWith(word));
+            if (matching.length === 1) {
+                symbolName = matching[0].name;
+            } else if (matching.length > 1) {
+                 const currentFile = matching.find(s => s.uri.toString() === document.uri.toString());
+                 if (currentFile) {
+                     symbolName = currentFile.name;
+                 }
             }
+        }
+    } else if (word.startsWith('$')) {
+        // Macro argument
+        const contextPrefix = this.symbolTable.getContextPrefix(document.uri, position);
+        if (contextPrefix) {
+            symbolName = `${contextPrefix}:${word}`;
         }
     }
 

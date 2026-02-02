@@ -258,7 +258,14 @@ export class Parser {
                 continue;
             }
 
-            if (!this.currentMacroArgs.has(name)) {
+            if (this.currentMacroArgs.has(name)) {
+                this.symbolTable.addReference({
+                    name: `${this.currentMacroName}:${name}`,
+                    uri: this.uri,
+                    range: this.tokenToRange(token),
+                    expectedType: SymbolType.VARIABLE
+                });
+            } else {
                 const isCommand = this.commandRegistry?.getCommand(name) || this.isBuiltInCommand(name);
                 const isIdentifier = this.commandRegistry?.hasIdentifier(name);
                 const isMacro = this.symbolTable.getSymbols(name).some(s => s.type === SymbolType.MACRO);
@@ -410,6 +417,12 @@ export class Parser {
         }
         if (token.type === TokenType.IDENTIFIER && token.value.startsWith('$')) {
           this.currentMacroArgs.add(token.value);
+          this.symbolTable.addSymbol({
+            name: `${macroName}:${token.value}`,
+            type: SymbolType.VARIABLE,
+            uri: this.uri,
+            range: this.tokenToRange(token)
+          });
           this.advance();
         } else if (token.type === TokenType.COMMA) {
           this.advance();
@@ -441,9 +454,16 @@ export class Parser {
             this.parseConst();
           } else {
             const currentToken = this.advance();
-            const isCommand = this.commandRegistry?.getCommand(t.value) || this.isBuiltInCommand(t.value);
+            if (this.currentMacroArgs.has(t.value)) {
+              this.symbolTable.addReference({
+                name: `${macroName}:${t.value}`,
+                uri: this.uri,
+                range: this.tokenToRange(currentToken),
+                expectedType: SymbolType.VARIABLE
+              });
+            } else {
+              const isCommand = this.commandRegistry?.getCommand(t.value) || this.isBuiltInCommand(t.value);
 
-            if (!this.currentMacroArgs.has(t.value)) {
               this.symbolTable.addReference({
                 name: t.value,
                 uri: this.uri,

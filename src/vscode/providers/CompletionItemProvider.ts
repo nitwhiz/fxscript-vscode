@@ -29,12 +29,12 @@ export class CompletionItemProvider implements vscode.CompletionItemProvider {
     const isAtStartOfLine = lineUntilCursor.trim().length === 0;
 
     // A better check for argument position: if the first non-whitespace word is already there.
-    const firstWordMatch = lineUntilCursor.match(/^\s*([@%a-zA-Z0-9_-]+)/);
+    const firstWordMatch = lineUntilCursor.match(/^\s*([@%$a-zA-Z0-9_-]+)/);
     const isAtArgumentPosition = firstWordMatch && lineUntilCursor.length > firstWordMatch[0].length;
 
     // We allow spaces after comma or at start of argument list.
     // However, if we've already started typing a word, we want that word to be the filter.
-    const wordRange = document.getWordRangeAtPosition(position, /[@%a-zA-Z0-9_-]+/);
+    const wordRange = document.getWordRangeAtPosition(position, /[@%$a-zA-Z0-9_-]+/);
 
     // 1. Suggest Commands
     // Only suggest at start of line
@@ -93,7 +93,7 @@ export class CompletionItemProvider implements vscode.CompletionItemProvider {
     }
 
     for (const s of symbols) {
-      // Don't suggest raw @const lookup values (those containing a colon)
+      // Don't suggest raw @const lookup values or macro args (those containing a colon)
       if (s.name.includes(':')) {
         continue;
       }
