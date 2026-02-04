@@ -3,3 +3,4 @@ node_modules/
 out/
 fxscript-vscode-*.vsix
 .vscode-test
+coverage

@@ -86,6 +86,14 @@ export class Lexer {
       return this.consumeToken(TokenType.OPERATOR, "%");
     }
 
+    if (char === '-') {
+      // Hyphen can be part of a label or local label if it looks like one
+      // If we are at the start of a word that contains hyphens and ends with a colon, it's a label.
+      // But Lexer handles identifiers/labels/local labels in their own methods.
+      // A standalone '-' is an operator.
+      return this.readOperator();
+    }
+
     if (char === ',') {
       return this.consumeToken(TokenType.COMMA, ",");
     }
@@ -166,7 +174,15 @@ export class Lexer {
     if (this.peek() === '_') {
       value += this.advance();
     }
-    while (this.pos < this.input.length && this.isAlphaNumeric(this.peek())) {
+    while (this.pos < this.input.length && (this.isAlphaNumeric(this.peek()) || this.peek() === '-')) {
+      const char = this.peek();
+      if (char === '-') {
+        // Allow hyphen in local labels if it's followed by alphanumeric (could be reference or definition)
+        const next = this.peek(1);
+        if (!this.isAlphaNumeric(next)) {
+            break;
+        }
+      }
       value += this.advance();
     }
 
@@ -199,24 +215,11 @@ export class Lexer {
     while (this.pos < this.input.length && (this.isAlphaNumeric(this.peek()) || this.peek() === '-')) {
       const char = this.peek();
       if (char === '-') {
-        // ONLY allow hyphen in labels if it's a label definition (has a colon)
-        let isLabelDef = false;
-        let lookaheadPos = this.pos + 1;
-
-        // Skip any alphanumeric characters and hyphens to see if a colon follows
-        while (lookaheadPos < this.input.length) {
-            const c = this.input[lookaheadPos];
-            if (this.isAlphaNumeric(c) || c === '-') {
-                lookaheadPos++;
-            } else {
-                if (c === ':') {
-                    isLabelDef = true;
-                }
-                break;
-            }
+        // Allow hyphen in identifiers/labels if it's followed by alphanumeric
+        const next = this.peek(1);
+        if (!this.isAlphaNumeric(next)) {
+            break;
         }
-
-        if (!isLabelDef) break;
       }
       value += this.advance();
     }

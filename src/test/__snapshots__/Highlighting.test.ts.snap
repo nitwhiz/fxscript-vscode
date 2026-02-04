@@ -1,0 +1,289 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`FXScript Highlighting > should highlight complex labels and expressions 1`] = `
+[
+  {
+    "modifiers": [
+      "declaration",
+    ],
+    "range": Range {
+      "endChar": 18,
+      "endLine": 1,
+      "startChar": 0,
+      "startLine": 1,
+    },
+    "type": "function",
+  },
+  {
+    "modifiers": [
+      "declaration",
+    ],
+    "range": Range {
+      "endChar": 7,
+      "endLine": 5,
+      "startChar": 0,
+      "startLine": 5,
+    },
+    "type": "function",
+  },
+  {
+    "modifiers": [
+      "declaration",
+    ],
+    "range": Range {
+      "endChar": 7,
+      "endLine": 6,
+      "startChar": 0,
+      "startLine": 6,
+    },
+    "type": "function",
+  },
+  {
+    "modifiers": undefined,
+    "range": Range {
+      "endChar": 5,
+      "endLine": 2,
+      "startChar": 2,
+      "startLine": 2,
+    },
+    "type": "keyword",
+  },
+  {
+    "modifiers": undefined,
+    "range": Range {
+      "endChar": 6,
+      "endLine": 3,
+      "startChar": 2,
+      "startLine": 3,
+    },
+    "type": "keyword",
+  },
+  {
+    "modifiers": undefined,
+    "range": Range {
+      "endChar": 24,
+      "endLine": 3,
+      "startChar": 7,
+      "startLine": 3,
+    },
+    "type": "function",
+  },
+  {
+    "modifiers": undefined,
+    "range": Range {
+      "endChar": 8,
+      "endLine": 7,
+      "startChar": 2,
+      "startLine": 7,
+    },
+    "type": "keyword",
+  },
+  {
+    "modifiers": undefined,
+    "range": Range {
+      "endChar": 22,
+      "endLine": 7,
+      "startChar": 16,
+      "startLine": 7,
+    },
+    "type": "function",
+  },
+]
+`;
+
+exports[`FXScript Highlighting > should highlight custom commands 1`] = `
+[
+  {
+    "modifiers": [
+      "declaration",
+    ],
+    "range": Range {
+      "endChar": 5,
+      "endLine": 1,
+      "startChar": 0,
+      "startLine": 1,
+    },
+    "type": "function",
+  },
+  {
+    "modifiers": undefined,
+    "range": Range {
+      "endChar": 11,
+      "endLine": 2,
+      "startChar": 2,
+      "startLine": 2,
+    },
+    "type": "keyword",
+  },
+]
+`;
+
+exports[`FXScript Highlighting > should highlight labels, keywords and variables 1`] = `
+[
+  {
+    "modifiers": [
+      "declaration",
+    ],
+    "range": Range {
+      "endChar": 5,
+      "endLine": 1,
+      "startChar": 0,
+      "startLine": 1,
+    },
+    "type": "function",
+  },
+  {
+    "modifiers": [
+      "declaration",
+    ],
+    "range": Range {
+      "endChar": 11,
+      "endLine": 2,
+      "startChar": 6,
+      "startLine": 2,
+    },
+    "type": "variable",
+  },
+  {
+    "modifiers": undefined,
+    "range": Range {
+      "endChar": 5,
+      "endLine": 3,
+      "startChar": 2,
+      "startLine": 3,
+    },
+    "type": "keyword",
+  },
+  {
+    "modifiers": undefined,
+    "range": Range {
+      "endChar": 11,
+      "endLine": 3,
+      "startChar": 6,
+      "startLine": 3,
+    },
+    "type": "variable",
+  },
+  {
+    "modifiers": undefined,
+    "range": Range {
+      "endChar": 6,
+      "endLine": 4,
+      "startChar": 2,
+      "startLine": 4,
+    },
+    "type": "keyword",
+  },
+  {
+    "modifiers": undefined,
+    "range": Range {
+      "endChar": 11,
+      "endLine": 4,
+      "startChar": 7,
+      "startLine": 4,
+    },
+    "type": "function",
+  },
+]
+`;
+
+exports[`FXScript Highlighting > should highlight macros and their arguments 1`] = `
+[
+  {
+    "modifiers": [
+      "declaration",
+    ],
+    "range": Range {
+      "endChar": 13,
+      "endLine": 1,
+      "startChar": 6,
+      "startLine": 1,
+    },
+    "type": "keyword",
+  },
+  {
+    "modifiers": [
+      "declaration",
+    ],
+    "range": Range {
+      "endChar": 18,
+      "endLine": 1,
+      "startChar": 14,
+      "startLine": 1,
+    },
+    "type": "variable",
+  },
+  {
+    "modifiers": [
+      "declaration",
+    ],
+    "range": Range {
+      "endChar": 9,
+      "endLine": 3,
+      "startChar": 2,
+      "startLine": 3,
+    },
+    "type": "function",
+  },
+  {
+    "modifiers": undefined,
+    "range": Range {
+      "endChar": 5,
+      "endLine": 2,
+      "startChar": 2,
+      "startLine": 2,
+    },
+    "type": "keyword",
+  },
+  {
+    "modifiers": undefined,
+    "range": Range {
+      "endChar": 10,
+      "endLine": 2,
+      "startChar": 6,
+      "startLine": 2,
+    },
+    "type": "variable",
+  },
+  {
+    "modifiers": undefined,
+    "range": Range {
+      "endChar": 8,
+      "endLine": 4,
+      "startChar": 2,
+      "startLine": 4,
+    },
+    "type": "keyword",
+  },
+  {
+    "modifiers": undefined,
+    "range": Range {
+      "endChar": 13,
+      "endLine": 4,
+      "startChar": 9,
+      "startLine": 4,
+    },
+    "type": "variable",
+  },
+  {
+    "modifiers": undefined,
+    "range": Range {
+      "endChar": 21,
+      "endLine": 4,
+      "startChar": 15,
+      "startLine": 4,
+    },
+    "type": "function",
+  },
+  {
+    "modifiers": undefined,
+    "range": Range {
+      "endChar": 7,
+      "endLine": 6,
+      "startChar": 0,
+      "startLine": 6,
+    },
+    "type": "keyword",
+  },
+]
+`;

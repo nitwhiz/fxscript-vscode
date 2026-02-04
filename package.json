@@ -48,6 +48,8 @@
     "build": "tsc -p ./",
     "watch": "tsc -watch -p ./",
     "package": "vsce package",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
     "vscode:prepublish": "npm run build",
     "vscode:dev": "npm run build && code --extensionDevelopmentPath=$(pwd) --user-data-dir=$(pwd)/.vscode-test/user-data examples/script",
     "vscode:install": "npm run package && code --install-extension fxscript-vscode-$(node -p \"require('./package.json').version\").vsix"
@@ -55,8 +57,10 @@
   "devDependencies": {
     "@types/node": "24.x",
     "@types/vscode": "^1.90.0",
+    "@vitest/coverage-v8": "^4.0.18",
     "@vscode/vsce": "^3.2.1",
-    "typescript": "^5.7.3"
+    "typescript": "^5.7.3",
+    "vitest": "^4.0.18"
   },
   "dependencies": {
     "vscode-languageclient": "^9.0.1",

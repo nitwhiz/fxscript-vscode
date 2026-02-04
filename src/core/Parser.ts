@@ -261,26 +261,6 @@ export class Parser {
                 continue;
             }
 
-            // Check if we should join with next tokens for labels with hyphens
-            while (this.pos + 1 < this.tokens.length) {
-                const nextToken = this.tokens[this.pos + 1];
-                const nextNextToken = this.pos + 2 < this.tokens.length ? this.tokens[this.pos + 2] : undefined;
-
-                if (nextToken.value === '-' && nextNextToken && nextNextToken.type === TokenType.IDENTIFIER) {
-                    // Peek if it's followed by a space - if so, it's likely an operator
-                    // But our tokens don't have whitespace info easily.
-                    // However, we can check if it looks like an expression (e.g. followed by comma or newline)
-                    // Actually, if it's a known symbol that contains a hyphen, we should join.
-                    const potentialName = name + '-' + nextNextToken.value;
-                    if (this.symbolTable.getSymbols(potentialName).length > 0) {
-                        name = potentialName;
-                        this.pos += 2; // Consume '-' and the next identifier
-                        continue;
-                    }
-                }
-                break;
-            }
-
             if (this.currentMacroArgs.has(name)) {
                 this.symbolTable.addReference({
                     name: `${this.currentMacroName}:${name}`,
