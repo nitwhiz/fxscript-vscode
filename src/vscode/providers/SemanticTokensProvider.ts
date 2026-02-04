@@ -4,7 +4,7 @@ import { CommandRegistry } from '../../workspace/CommandRegistry';
 import { isBuiltInCommand } from '../../core/BuiltInCommands';
 
 export const legend = new vscode.SemanticTokensLegend(
-    ['keyword', 'variable', 'function', 'parameter'],
+    ['keyword', 'variable', 'function', 'parameter', 'type'],
     ['declaration', 'documentation']
 );
 
@@ -91,7 +91,7 @@ export class SemanticTokensProvider implements vscode.DocumentSemanticTokensProv
             } else if (isConst || isVar) {
                 builder.push(ref.range, 'variable');
             } else if (this.commandRegistry.hasIdentifier(name)) {
-                builder.push(ref.range, 'variable');
+                builder.push(ref.range, 'type');
             }
         }
 

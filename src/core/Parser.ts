@@ -200,7 +200,7 @@ export class Parser {
     // Basic expression parser that consumes tokens until a comma or newline/EOF
     // and records references
     let parenCount = 0;
-    let lastTokenWasOperator = false;
+    let lastTokenWasOperator = true; // Start as true to allow unary operators at the beginning
 
     // Expected type based on command definition
     let expectedSymbolType: SymbolType | undefined;
@@ -223,12 +223,18 @@ export class Parser {
         break;
       }
 
+      // Skip whitespace tokens if any (Lexer.tokenize already filters them, but just in case)
+      if (token.type === TokenType.WHITESPACE) {
+        this.advance();
+        continue;
+      }
+
       const currentTokenPos = this.pos;
 
       if (token.type === TokenType.LPAREN) {
         parenCount++;
         this.advance();
-        lastTokenWasOperator = false;
+        lastTokenWasOperator = true; // Allow unary operators after '('
       } else if (token.type === TokenType.RPAREN) {
         parenCount--;
         if (parenCount < 0) {
@@ -252,10 +258,27 @@ export class Parser {
             if (this.isOperator(token.type, name)) {
                 this.advance();
                 lastTokenWasOperator = true;
-                if (name === "!" || name === "~") {
-                    lastTokenWasOperator = true;
-                }
                 continue;
+            }
+
+            // Check if we should join with next tokens for labels with hyphens
+            while (this.pos + 1 < this.tokens.length) {
+                const nextToken = this.tokens[this.pos + 1];
+                const nextNextToken = this.pos + 2 < this.tokens.length ? this.tokens[this.pos + 2] : undefined;
+
+                if (nextToken.value === '-' && nextNextToken && nextNextToken.type === TokenType.IDENTIFIER) {
+                    // Peek if it's followed by a space - if so, it's likely an operator
+                    // But our tokens don't have whitespace info easily.
+                    // However, we can check if it looks like an expression (e.g. followed by comma or newline)
+                    // Actually, if it's a known symbol that contains a hyphen, we should join.
+                    const potentialName = name + '-' + nextNextToken.value;
+                    if (this.symbolTable.getSymbols(potentialName).length > 0) {
+                        name = potentialName;
+                        this.pos += 2; // Consume '-' and the next identifier
+                        continue;
+                    }
+                }
+                break;
             }
 
             if (this.currentMacroArgs.has(name)) {
@@ -267,17 +290,18 @@ export class Parser {
                 });
             } else {
                 const isCommand = this.commandRegistry?.getCommand(name) || this.isBuiltInCommand(name);
-                const isIdentifier = this.commandRegistry?.hasIdentifier(name);
                 const isMacro = this.symbolTable.getSymbols(name).some(s => s.type === SymbolType.MACRO);
 
-                if (!isIdentifier && !isMacro) {
+                if (!isMacro) {
                     this.symbolTable.addReference({
                         name: name,
                         uri: this.uri,
                         range: this.tokenToRange(token),
                         expectedType: isCommand ? undefined : expectedSymbolType
                     });
-                } else if (isMacro) {
+                }
+
+                if (isMacro) {
                     // It's a macro being used in an expression/argument
                     this.diagnostics.push(new vscode.Diagnostic(
                         this.tokenToRange(token),
@@ -300,13 +324,8 @@ export class Parser {
         this.advance();
         lastTokenWasOperator = false;
       } else if (this.isOperator(token.type, token.value)) {
-        const opToken = this.advance();
+        this.advance();
         lastTokenWasOperator = true;
-
-        // Unary operators don't need a preceding operand
-        if (opToken.value === "!" || opToken.value === "~") {
-            lastTokenWasOperator = true; // Still expecting something after it
-        }
       } else {
         this.advance();
       }
@@ -325,11 +344,31 @@ export class Parser {
     }
 
     if (lastTokenWasOperator) {
-        this.diagnostics.push(new vscode.Diagnostic(
-            this.tokenToRange(this.tokens[this.pos - 1]),
-            `Incomplete expression: expected operand at end of expression`,
-            vscode.DiagnosticSeverity.Error
-        ));
+        // Find the last non-RParen token to see if it was really an operator that needs an operand
+        let lastRealOpIdx = this.pos - 1;
+        while (lastRealOpIdx >= 0 && this.tokens[lastRealOpIdx].type === TokenType.RPAREN) {
+            lastRealOpIdx--;
+        }
+
+        if (lastRealOpIdx >= 0) {
+            const lastToken = this.tokens[lastRealOpIdx];
+            if (this.isOperator(lastToken.type, lastToken.value) || lastToken.type === TokenType.LPAREN || lastToken.type === TokenType.COMMA) {
+                // It's genuinely an incomplete expression if it ends in an operator (that's not a unary-only if we had those)
+                // or if it's empty/just started.
+                // But if we are at the end and lastTokenWasOperator is true, it might be that no operand was ever provided.
+                this.diagnostics.push(new vscode.Diagnostic(
+                    this.tokenToRange(this.tokens[this.pos - 1]),
+                    `Incomplete expression: expected operand at end of expression`,
+                    vscode.DiagnosticSeverity.Error
+                ));
+            }
+        } else {
+             this.diagnostics.push(new vscode.Diagnostic(
+                this.tokenToRange(this.tokens[this.pos - 1]),
+                `Incomplete expression: expected operand`,
+                vscode.DiagnosticSeverity.Error
+            ));
+        }
     }
   }
 

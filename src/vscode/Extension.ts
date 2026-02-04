@@ -59,7 +59,7 @@ export function activate(context: vscode.ExtensionContext) {
     vscode.languages.registerCompletionItemProvider(
       { language: 'fxscript', scheme: 'file' },
       new CompletionItemProvider(symbolTable, commandRegistry),
-      ',', ' ' // Trigger characters
+      ',', ' ', '-', '+', '*', '/', '>', '<', '=', '(', ')' // Trigger characters
     )
   );
 
@@ -77,6 +77,13 @@ export function activate(context: vscode.ExtensionContext) {
       legend
     )
   );
+
+  // Trigger initial semantic token refresh
+  setTimeout(() => {
+    workspaceIndexer.indexWorkspace().then(() => {
+        // Semantic tokens are fired by indexWorkspace -> indexDocument -> indexContent -> revalidateAll
+    });
+  }, 500);
 
   console.log('FXScript extension activated');
 }

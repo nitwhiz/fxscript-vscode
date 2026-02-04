@@ -32,7 +32,28 @@ export class CompletionItemProvider implements vscode.CompletionItemProvider {
 
     // We allow spaces after comma or at start of argument list.
     // However, if we've already started typing a word, we want that word to be the filter.
-    const wordRange = document.getWordRangeAtPosition(position, /[@%$a-zA-Z0-9_-]+/);
+    // We adjust the regex to NOT include operators if they are at the end, to allow suggestions after them.
+    let wordRange = document.getWordRangeAtPosition(position, /[@%$a-zA-Z0-9_-]+/);
+
+    if (wordRange) {
+      const word = document.getText(wordRange);
+      // If the word ends with an operator-like character and the cursor is right after it,
+      // we might want to shrink the range to exclude that character so suggestions work.
+      // e.g. "var-" -> we want to suggest after "-"
+      const lastChar = word[word.length - 1];
+      const operators = ['-', '+', '*', '/', '>', '<', '=', '(', ')', ','];
+      if (operators.includes(lastChar) && position.character === wordRange.end.character) {
+        // SPECIAL CASE: if it's a hyphen, check if the preceding part looks like a word.
+        // If it's 'statHp-', we want to suggest after '-'. 
+        // If it's 'AccuracyCheck-', we might be typing 'AccuracyCheck-fail'.
+        // But to trigger suggestions after '-', we MUST shrink the range.
+        
+        wordRange = new vscode.Range(wordRange.start, position.translate(0, -1));
+        if (wordRange.isEmpty) {
+          wordRange = undefined;
+        }
+      }
+    }
 
     // Context for macro
     const contextPrefix = this.symbolTable.getContextPrefix(document.uri, position);

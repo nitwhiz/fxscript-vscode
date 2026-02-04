@@ -34,6 +34,8 @@
     }
   ],
   "identifiers": [
+    "statHp",
+    "statCurrentHp",
     "damage",
     "overrideMovePower",
     "sourceStatus",
