@@ -38,8 +38,8 @@ export class Parser {
       if (token.type === TokenType.KEYWORD) {
           if (token.value === 'var') {
             this.parseVar();
-          } else if (token.value === 'const') {
-            this.parseConst();
+          } else if (token.value === 'def') {
+            this.parseDef();
           } else if (token.value === 'macro') {
             this.parseMacro();
             this.lastComment = undefined;
@@ -68,9 +68,9 @@ export class Parser {
       } else if (token.type === TokenType.COMMENT) {
         const commentValue = token.value.substring(1).trim();
         this.lastComment = this.lastComment ? `${this.lastComment}\n${commentValue}` : commentValue;
-        this.parseSpecialConst();
-      } else if (token.type === TokenType.DIRECTIVE && token.value.startsWith('@const')) {
-        this.parseSpecialConstDirectly();
+        this.parseSpecialDef();
+      } else if (token.type === TokenType.DIRECTIVE && token.value.startsWith('@def')) {
+        this.parseSpecialDefDirectly();
         this.lastComment = undefined;
       } else if (token.type === TokenType.DIRECTIVE && token.value.startsWith('@include')) {
           this.advance(); // Just consume it for now
@@ -357,8 +357,8 @@ export class Parser {
     this.lastComment = undefined;
   }
 
-  private parseConst() {
-    this.advance(); // const
+  private parseDef() {
+    this.advance(); // def
     const nameToken = this.consume(TokenType.IDENTIFIER);
     if (nameToken) {
       this.symbolTable.addSymbol({
@@ -450,8 +450,8 @@ export class Parser {
             break;
           } else if (t.value === 'var') {
             this.parseVar();
-          } else if (t.value === 'const') {
-            this.parseConst();
+          } else if (t.value === 'def') {
+            this.parseDef();
           } else {
             const currentToken = this.advance();
             if (this.currentMacroArgs.has(t.value)) {
@@ -617,7 +617,7 @@ export class Parser {
     this.parseCommandArguments();
   }
 
-  private parseSpecialConst() {
+  private parseSpecialDef() {
     const commentToken = this.advance();
 
     // Skip newlines between comment and directive
@@ -626,11 +626,11 @@ export class Parser {
     }
 
     const nextToken = this.peek();
-    if (nextToken && nextToken.type === TokenType.DIRECTIVE && nextToken.value.startsWith('@const')) {
+    if (nextToken && nextToken.type === TokenType.DIRECTIVE && nextToken.value.startsWith('@def')) {
         const commentParts = commentToken.value.substring(1).trim().split(/\s+/);
         if (commentParts.length > 0) {
             const runtimeName = commentParts[0];
-            const directiveValue = nextToken.value.substring(6).trim(); // Skip "@const"
+            const directiveValue = nextToken.value.substring(4).trim(); // Skip "@def"
 
             // Add the directive value as a symbol (so we can find it)
             this.symbolTable.addSymbol({
@@ -638,7 +638,7 @@ export class Parser {
                 type: SymbolType.CONSTANT,
                 uri: this.uri,
                 range: this.tokenToRange(nextToken),
-                documentation: `const ${runtimeName}`
+                documentation: `def ${runtimeName}`
             });
 
             // Add the runtime name as a symbol as well
@@ -650,14 +650,14 @@ export class Parser {
                 documentation: `Lookup for ${directiveValue}`
             });
 
-            this.advance(); // consume @const
+            this.advance(); // consume @def
         }
     }
   }
 
-  private parseSpecialConstDirectly() {
+  private parseSpecialDefDirectly() {
     const token = this.advance();
-    const name = token.value.substring(6).trim();
+    const name = token.value.substring(4).trim();
     this.symbolTable.addSymbol({
         name: name,
         type: SymbolType.CONSTANT,

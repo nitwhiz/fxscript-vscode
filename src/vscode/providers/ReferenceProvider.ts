@@ -31,15 +31,15 @@ export class ReferenceProvider implements vscode.ReferenceProvider {
 
     let symbolName = word;
 
-    // Special case for @const lookups at the definition site
-    if (document.lineAt(position.line).text.trim().startsWith('@const')) {
+    // Special case for @def lookups at the definition site
+    if (document.lineAt(position.line).text.trim().startsWith('@def')) {
         const symbolsAtPosition = this.symbolTable.getAllSymbols().filter(s =>
             s.uri.toString() === document.uri.toString() &&
             s.range.contains(position) &&
-            s.documentation?.startsWith('const ')
+            s.documentation?.startsWith('def ')
         );
         if (symbolsAtPosition.length > 0) {
-            symbolName = symbolsAtPosition[0].documentation!.substring(6);
+            symbolName = symbolsAtPosition[0].documentation!.substring(4);
         }
     }
 

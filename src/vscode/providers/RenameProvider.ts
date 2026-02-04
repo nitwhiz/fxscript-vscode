@@ -16,21 +16,21 @@ export class RenameProvider implements vscode.RenameProvider {
 
     const word = document.getText(range);
 
-    // Check if it's a comment (not allowed unless it's a special @const comment)
+    // Check if it's a comment (not allowed unless it's a special @def comment)
     const lineText = document.lineAt(position.line).text;
     const commentIndex = lineText.indexOf('#');
     if (commentIndex !== -1 && position.character >= commentIndex) {
-        // Only allow if it's the first word of the comment and followed by @const on next non-empty line
+        // Only allow if it's the first word of the comment and followed by @def on next non-empty line
         const commentPart = lineText.substring(commentIndex + 1).trim();
         const firstWord = commentPart.split(/\s+/)[0];
 
         if (firstWord && word === firstWord) {
-            // Check if there's an @const below
+            // Check if there's an @def below
             let foundConst = false;
             for (let i = position.line + 1; i < document.lineCount; i++) {
                 const nextLine = document.lineAt(i).text.trim();
                 if (nextLine === "") continue;
-                if (nextLine.startsWith('@const')) {
+                if (nextLine.startsWith('@def')) {
                     foundConst = true;
                 }
                 break;
@@ -58,7 +58,7 @@ export class RenameProvider implements vscode.RenameProvider {
     const lineText = document.lineAt(position.line).text;
     const contextPrefix = this.symbolTable.getContextPrefix(document.uri, position);
 
-    // Handle @const special comment rename
+    // Handle @def special comment rename
     const commentIndex = lineText.indexOf('#');
     if (commentIndex !== -1 && position.character >= commentIndex) {
         const commentPart = lineText.substring(commentIndex + 1).trim();
@@ -110,15 +110,15 @@ export class RenameProvider implements vscode.RenameProvider {
         if (contextPrefix) {
             symbolName = `${contextPrefix}:${word}`;
         }
-    } else if (lineText.trim().startsWith('@const')) {
-        // Special case for @const lookup value rename
+    } else if (lineText.trim().startsWith('@def')) {
+        // Special case for @def lookup value rename
         const symbolsAtPosition = this.symbolTable.getAllSymbols().filter(s =>
             s.uri.toString() === document.uri.toString() &&
             s.range.contains(position) &&
-            s.documentation?.startsWith('const ')
+            s.documentation?.startsWith('def ')
         );
         if (symbolsAtPosition.length > 0) {
-            symbolName = symbolsAtPosition[0].name; // The value following @const
+            symbolName = symbolsAtPosition[0].name; // The value following @def
         }
     }
 
@@ -145,10 +145,10 @@ export class RenameProvider implements vscode.RenameProvider {
         }
     }
 
-    // Handle @const runtime name rename (needs to find the other symbol)
+    // Handle @def runtime name rename (needs to find the other symbol)
     // Actually, if we rename the runtime name, we need to update the documentation of the directive symbol
     // But since the documentation is not in the text, we don't need to update it in the workspace edit.
-    // However, we should check if this symbol IS a runtime name for an @const
+    // However, we should check if this symbol IS a runtime name for an @def
 
     for (const sym of symbols) {
         let range = sym.range;

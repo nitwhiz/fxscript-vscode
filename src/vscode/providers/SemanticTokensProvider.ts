@@ -36,19 +36,19 @@ export class SemanticTokensProvider implements vscode.DocumentSemanticTokensProv
                 type = 'variable';
             }
 
-            // If it's a @const directive, highlight the keyword part as a keyword
+            // If it's a @def directive, highlight the keyword part as a keyword
             if (symbol.type === SymbolType.CONSTANT) {
                 const lineIndex = symbol.range.start.line;
                 if (lineIndex >= document.lineCount) continue;
                 const line = document.lineAt(lineIndex).text;
-                const match = line.match(/^(\s*)@const\b/);
+                const match = line.match(/^(\s*)@def\b/);
                 if (match) {
                     const startChar = match[1].length;
-                    const keywordRange = new vscode.Range(symbol.range.start.line, startChar, symbol.range.start.line, startChar + 6);
+                    const keywordRange = new vscode.Range(symbol.range.start.line, startChar, symbol.range.start.line, startChar + 4);
                     builder.push(keywordRange, 'keyword');
 
                     // The rest of the symbol range should be variable (name:value)
-                    const restStart = startChar + 6;
+                    const restStart = startChar + 4;
                     // Find where the actual value starts (skip whitespace)
                     let actualStart = restStart;
                     while (actualStart < line.length && (line[actualStart] === ' ' || line[actualStart] === '\t')) {

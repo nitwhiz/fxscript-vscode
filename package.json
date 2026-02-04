@@ -28,7 +28,7 @@
         "extensions": [
           ".fx"
         ],
-        "firstLine": "^\\s*(@include|macro|var|const|#|[a-zA-Z_][a-zA-Z0-9_-]*:|goto|call|ret|jumpIf|\\/\\/)",
+        "firstLine": "^\\s*(@include|macro|var|def|#|[a-zA-Z_][a-zA-Z0-9_-]*:|goto|call|ret|jumpIf|\\/\\/)",
         "mimetypes": [
           "text/x-fxscript"
         ],

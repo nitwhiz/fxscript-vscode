@@ -59,7 +59,7 @@ export class CompletionItemProvider implements vscode.CompletionItemProvider {
       }
 
       // 3. Suggest Keywords
-      const keywords = ['var', 'const', 'macro', 'endmacro', '@include', '@const'];
+      const keywords = ['var', 'def', 'macro', 'endmacro', '@include', '@def'];
       for (const kw of keywords) {
         const item = new vscode.CompletionItem(kw, vscode.CompletionItemKind.Keyword);
         if (wordRange) {
@@ -93,7 +93,7 @@ export class CompletionItemProvider implements vscode.CompletionItemProvider {
     }
 
     for (const s of symbols) {
-      // Don't suggest raw @const lookup values or macro args (those containing a colon)
+      // Don't suggest raw @def lookup values or macro args (those containing a colon)
       if (s.name.includes(':')) {
         continue;
       }

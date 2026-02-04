@@ -14,17 +14,18 @@ FXScript is characterized by its instruction-oriented syntax, supporting macros,
     - **Symbol Discovery**: Since the entry file may not be known, symbols should be indexed workspace-wide regardless of includes.
 - **Constants & Variables**:
     - `var name`: Declares a variable (memory location). Cannot be redeclared.
-    - `const name <expression>`: Defines a standard constant. Tokens are replaced on usage; value cannot change.
-    - `@const name`: External/Special constants (Const Lookups).
+    - `def name <expression>`: Defines a standard constant. Tokens are replaced on usage; value cannot change.
+    - `@def name`: External/Special defines (Define Lookups).
         - Highlighting only (no deep parsing required).
-        - **Value Format**: The value following `@const` can be any string (e.g., `name:value` or just `value`). The colon in `name:value` is just an example and is not part of the specification.
-        - **Documentation Rule**: If a `@const` is preceded by a comment on the line immediately above, the first word of that comment is the name this `@const` will be represented as at runtime. Ignore everything else in the comment.
+        - **Value Format**: The value following `@def` can be any string (e.g., `name:value` or just `value`). The colon in `name:value` is just an example and is not part of the specification.
+        - **Documentation Rule**: If a `@def` is preceded by a comment on the line immediately above, the first word of that comment is the name this `@def` will be represented as at runtime. Ignore everything else in the comment.
         - *Example:*
           ```fx
           # MOVE_DIG
-          @const move:dig
+          @def move:dig
           ```
-          (Renders as `const MOVE_DIG` at runtime).
+          (Renders as `def MOVE_DIG` at runtime).
+        - **Inlay Hints (Smart Chips)**: For the example above, the editor should render an inlay hint `as def MOVE_DIG` immediately after `@def move:dig` to provide visual feedback of the runtime name. This hint should be clickable and navigate to references of `MOVE_DIG`.
 - **Labels**:
     - **Global Labels**: `LabelName:` (Definition) or `LabelName` (Usage).
     - **External Labels**: Global labels starting with an underscore (e.g., `_ExternalLabel`). These are treated as normal global labels but are not suggested during code completion.
@@ -49,7 +50,7 @@ FXScript is characterized by its instruction-oriented syntax, supporting macros,
 
 ### 2. Expressions & Operators
 
-FXScript supports expressions for constants and instruction arguments.
+FXScript supports expressions for definition and instruction arguments.
 
 | Category | Operators |
 | :--- | :--- |
@@ -83,11 +84,11 @@ Main:
     Canceler  # Second call: %_cancel internally differentiates from the first
 ```
 
-#### Expressions in Constants
+#### Expressions in Definitions
 ```
-const fStatusSleep      1 << 0
-const fStatusBurn       1 << 3
-const fStatusCombined   (fStatusSleep | fStatusBurn)
+def fStatusSleep      1 << 0
+def fStatusBurn       1 << 3
+def fStatusCombined   (fStatusSleep | fStatusBurn)
 ```
 
 ### 4. Core Extension Requirements
@@ -99,7 +100,7 @@ const fStatusCombined   (fStatusSleep | fStatusBurn)
     - If an LSP is deemed too heavy for initial development, the extension must still be structured such that the logic (parsing, indexing) is decoupled from the VSCode-specific glue code (providers).
 
 #### Symbol Navigation & Workspace Scope
-- **Global Indexing**: All symbols (labels, vars, consts, macros) must be indexed across the entire workspace. This index should be incrementally updated.
+- **Global Indexing**: All symbols (labels, vars, defs, macros) must be indexed across the entire workspace. This index should be incrementally updated.
 - **Resolution**: A symbol usage should resolve to its definition even if they are in different files not explicitly linked by `@include`.
 - **Features**: Go to Definition, Find Usages, Symbol Rename, and Workspace Symbol search.
 
@@ -107,7 +108,7 @@ const fStatusCombined   (fStatusSleep | fStatusBurn)
 - **Context-Aware Suggestions**:
     - Suggest `label` names only for arguments of type `label` (e.g., `goto`, `call`).
     - Exclude "external" labels (non-local labels starting with `_`) from suggestions.
-    - Suggest `var`, `const` and global `identifiers` (predefined in the runtime, loaded from `commands.json`) for `identifier` types.
+    - Suggest `var`, `def` and global `identifiers` (predefined in the runtime, loaded from `commands.json`) for `identifier` types.
     - Suggest files for `@include`.
 - **Validation**:
     - Flag missing symbols.
@@ -154,8 +155,8 @@ When adding a new built-in command:
 - **`src/core`**: Contains the pure logic for FXScript.
     - `Lexer`: Tokenizes the input stream.
     - `Parser`: Builds an Abstract Syntax Tree (AST) or a simplified Instruction Map. 
-    - `ExpressionEvaluator`: Logic for evaluating constant expressions.
-    - `SymbolTable`: Manages the scope and resolution of symbols (vars, consts, labels, macros).
+    - `ExpressionEvaluator`: Logic for evaluating expressions.
+    - `SymbolTable`: Manages the scope and resolution of symbols (vars, defs, labels, macros).
 - **`src/workspace`**: Manages the global state.
     - `WorkspaceIndexer`: Scans the workspace, watches for file changes, and updates the global `SymbolTable`.
     - `CommandRegistry`: Loads and watches `commands.json`.

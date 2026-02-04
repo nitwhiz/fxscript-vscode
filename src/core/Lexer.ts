@@ -138,7 +138,7 @@ export class Lexer {
       value += this.advance();
     }
 
-    if (value === "@const" || value === "@include") {
+    if (value === "@def" || value === "@include") {
       this.skipWhitespace();
       while (this.pos < this.input.length && this.peek() !== '\n' && this.peek() !== '#') {
         value += this.advance();
@@ -247,7 +247,7 @@ export class Lexer {
       return this.createToken(TokenType.LABEL, value);
     }
 
-    const keywords = ["var", "const", "macro", "endmacro", ...getBuiltInCommandNames()];
+    const keywords = ["var", "def", "macro", "endmacro", ...getBuiltInCommandNames()];
     if (keywords.includes(value)) {
       return this.createToken(TokenType.KEYWORD, value);
     }

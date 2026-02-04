@@ -45,8 +45,12 @@
           }
         },
         {
-          "name": "keyword.other.const.fx",
-          "match": "@const\\b"
+          "name": "keyword.other.def.fx",
+          "match": "(@)(def)\\b",
+          "captures": {
+            "1": { "name": "keyword.other.def.fx" },
+            "2": { "name": "keyword.other.def.fx" }
+          }
         }
       ]
     },
@@ -57,8 +61,8 @@
           "match": "\\bvar\\b"
         },
         {
-          "name": "keyword.other.const.fx",
-          "match": "\\bconst\\b"
+          "name": "keyword.other.def.fx",
+          "match": "\\bdef\\b"
         },
         {
           "name": "keyword.other.macro.fx",

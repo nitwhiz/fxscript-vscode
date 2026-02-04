@@ -12,13 +12,13 @@ export class InlayHintsProvider implements vscode.InlayHintsProvider {
             if (symbol.uri.toString() === uriString && symbol.type === SymbolType.CONSTANT && symbol.documentation) {
                 if (range.contains(symbol.range.start)) {
                     // We only want to show hints for the raw directive symbols (e.g. "move:dig")
-                    // These have documentation starting with "const "
-                    if (symbol.documentation.startsWith('const ')) {
-                        const runtimeName = symbol.documentation.substring(6);
-                        
+                    // These have documentation starting with "def "
+                    if (symbol.documentation.startsWith('def ')) {
+                        const runtimeName = symbol.documentation.substring(4);
+
                         const parts: vscode.InlayHintLabelPart[] = [];
-                        parts.push(new vscode.InlayHintLabelPart(' as const '));
-                        
+                        parts.push(new vscode.InlayHintLabelPart(' as def '));
+
                         const namePart = new vscode.InlayHintLabelPart(runtimeName);
                         // Use a command to show references
                         namePart.command = {
