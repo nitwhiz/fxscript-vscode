@@ -25,20 +25,22 @@ export class CompletionItemProvider implements vscode.CompletionItemProvider {
 
     const items: vscode.CompletionItem[] = [];
 
-    // Check if we are at the beginning of the line (only whitespace before cursor)
-    const isAtStartOfLine = lineUntilCursor.trim().length === 0;
+    // Check if we are at the beginning of the line (only whitespace before cursor, or we are typing the first word)
+    const firstWordMatch = lineUntilCursor.match(/^\s*([@%$a-zA-Z0-9_-]*)/);
+    const isAtStartOfLine = firstWordMatch && lineUntilCursor.length === firstWordMatch[0].length;
 
-    // A better check for argument position: if the first non-whitespace word is already there.
-    const firstWordMatch = lineUntilCursor.match(/^\s*([@%$a-zA-Z0-9_-]+)/);
-    const isAtArgumentPosition = firstWordMatch && lineUntilCursor.length > firstWordMatch[0].length;
 
     // We allow spaces after comma or at start of argument list.
     // However, if we've already started typing a word, we want that word to be the filter.
     const wordRange = document.getWordRangeAtPosition(position, /[@%$a-zA-Z0-9_-]+/);
 
-    // 1. Suggest Commands
-    // Only suggest at start of line
+    // Context for macro
+    const contextPrefix = this.symbolTable.getContextPrefix(document.uri, position);
+    const isInsideMacro = !!(contextPrefix && this.symbolTable.getSymbols(contextPrefix).some(s => s.type === SymbolType.MACRO && s.uri.toString() === document.uri.toString() && s.scopeRange?.contains(position)));
+
+    // 1. Suggest Commands and Keywords at the start of the line
     if (isAtStartOfLine) {
+      // Suggest Commands
       const commands = this.commandRegistry.getAllCommands();
       for (const cmd of commands) {
         const item = new vscode.CompletionItem(cmd.name, vscode.CompletionItemKind.Function);
@@ -48,7 +50,7 @@ export class CompletionItemProvider implements vscode.CompletionItemProvider {
         items.push(item);
       }
 
-      // 2. Suggest Base Commands
+      // Suggest Base Commands
       const baseCommands = getBuiltInCommandNames();
       for (const cmd of baseCommands) {
         const item = new vscode.CompletionItem(cmd, vscode.CompletionItemKind.Keyword);
@@ -58,8 +60,26 @@ export class CompletionItemProvider implements vscode.CompletionItemProvider {
         items.push(item);
       }
 
-      // 3. Suggest Keywords
-      const keywords = ['var', 'def', 'macro', 'endmacro', '@include', '@def'];
+      // Suggest Macros (they can be used as commands)
+      const symbols = this.symbolTable.getAllSymbols();
+      const seenMacros = new Set<string>();
+      for (const s of symbols) {
+        if (s.type === SymbolType.MACRO && !seenMacros.has(s.name)) {
+          seenMacros.add(s.name);
+          const item = new vscode.CompletionItem(s.name, vscode.CompletionItemKind.Module);
+          if (wordRange) {
+            item.range = wordRange;
+          }
+          items.push(item);
+        }
+      }
+
+      // Suggest Keywords
+      const keywords = ['var', 'def', 'macro', '@include', '@def'];
+      if (isInsideMacro) {
+        keywords.push('endmacro');
+      }
+
       for (const kw of keywords) {
         const item = new vscode.CompletionItem(kw, vscode.CompletionItemKind.Keyword);
         if (wordRange) {
@@ -67,14 +87,14 @@ export class CompletionItemProvider implements vscode.CompletionItemProvider {
         }
         items.push(item);
       }
+
+      // At the start of the line, we ONLY suggest the above.
+      return items;
     }
 
-    // 4. Suggest Symbols from SymbolTable
+    // 4. Suggest Symbols from SymbolTable (Arguments context)
     const symbols = this.symbolTable.getAllSymbols();
     const seenNames = new Set<string>();
-
-    // Determine context for local labels
-    const contextPrefix = this.symbolTable.getContextPrefix(document.uri, position);
 
     // 5. Suggest Macro Arguments if inside a macro
     if (contextPrefix) {
@@ -95,6 +115,11 @@ export class CompletionItemProvider implements vscode.CompletionItemProvider {
     for (const s of symbols) {
       // Don't suggest raw @def lookup values or macro args (those containing a colon)
       if (s.name.includes(':')) {
+        continue;
+      }
+
+      // Macros are NOT allowed as arguments
+      if (s.type === SymbolType.MACRO) {
         continue;
       }
 
@@ -122,15 +147,6 @@ export class CompletionItemProvider implements vscode.CompletionItemProvider {
         case SymbolType.VARIABLE: kind = vscode.CompletionItemKind.Variable; break;
         case SymbolType.CONSTANT: kind = vscode.CompletionItemKind.Constant; break;
         case SymbolType.LABEL: kind = vscode.CompletionItemKind.Function; break;
-        case SymbolType.MACRO:
-          // Macros are only allowed in place of commands (-> macro calls)
-          // They are not allowed as arguments.
-          if (isAtArgumentPosition) {
-            continue;
-          }
-
-          kind = vscode.CompletionItemKind.Module;
-          break;
       }
 
       const label = s.localName || s.name;
@@ -148,6 +164,11 @@ export class CompletionItemProvider implements vscode.CompletionItemProvider {
     // Typically these are used in argument positions
     const identifiers = this.commandRegistry.getAllIdentifiers();
     for (const id of identifiers) {
+      // Macros are not allowed as identifiers/arguments
+      if (this.symbolTable.getSymbols(id).some(s => s.type === SymbolType.MACRO)) {
+        continue;
+      }
+
       const item = new vscode.CompletionItem(id, vscode.CompletionItemKind.Value);
       if (wordRange) {
         item.range = wordRange;
