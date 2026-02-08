@@ -14,7 +14,7 @@ describe('FXScript Highlighting', () => {
     const tokens = lexer.tokenize();
     const symbolTable = new SymbolTable();
     const commandRegistry = new CommandRegistry();
-    
+
     if (customCommands.commands) {
         for (const cmd of customCommands.commands) {
             (commandRegistry as any).commands.set(cmd.name, cmd);
@@ -83,6 +83,18 @@ Main:
   customCmd
 `;
     const tokens = await getTokens(content, customCommands);
+    expect(tokens).toMatchSnapshot();
+  });
+
+  it('should highlight various integer bases', async () => {
+    const content = `
+Main:
+  set a, 123
+  set b, 0xABC
+  set c, 0b1010
+  set d, 0c755
+`;
+    const tokens = await getTokens(content);
     expect(tokens).toMatchSnapshot();
   });
 });

@@ -105,6 +105,14 @@ export class Parser {
           });
 
           this.parseCommandArguments(name);
+        } else if (token.type === TokenType.NUMBER) {
+          this.symbolTable.addReference({
+              name: token.value,
+              uri: this.uri,
+              range: this.tokenToRange(token),
+              expectedType: SymbolType.NUMBER
+          });
+          this.advance();
           this.lastComment = undefined;
         } else if (token.type === TokenType.NEWLINE) {
         this.advance();
@@ -299,6 +307,13 @@ export class Parser {
                 uri: this.uri,
                 range: this.tokenToRange(token),
                 expectedType: SymbolType.LABEL
+            });
+        } else if (token.type === TokenType.NUMBER) {
+            this.symbolTable.addReference({
+                name: token.value,
+                uri: this.uri,
+                range: this.tokenToRange(token),
+                expectedType: SymbolType.NUMBER
             });
         }
         this.advance();

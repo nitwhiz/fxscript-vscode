@@ -51,6 +51,36 @@ exports[`FXScript Highlighting > should highlight complex labels and expressions
   {
     "modifiers": undefined,
     "range": Range {
+      "endChar": 11,
+      "endLine": 2,
+      "startChar": 10,
+      "startLine": 2,
+    },
+    "type": "number",
+  },
+  {
+    "modifiers": undefined,
+    "range": Range {
+      "endChar": 15,
+      "endLine": 2,
+      "startChar": 14,
+      "startLine": 2,
+    },
+    "type": "number",
+  },
+  {
+    "modifiers": undefined,
+    "range": Range {
+      "endChar": 24,
+      "endLine": 2,
+      "startChar": 19,
+      "startLine": 2,
+    },
+    "type": "number",
+  },
+  {
+    "modifiers": undefined,
+    "range": Range {
       "endChar": 6,
       "endLine": 3,
       "startChar": 2,
@@ -77,6 +107,16 @@ exports[`FXScript Highlighting > should highlight complex labels and expressions
       "startLine": 7,
     },
     "type": "keyword",
+  },
+  {
+    "modifiers": undefined,
+    "range": Range {
+      "endChar": 14,
+      "endLine": 7,
+      "startChar": 13,
+      "startLine": 7,
+    },
+    "type": "number",
   },
   {
     "modifiers": undefined,
@@ -167,6 +207,16 @@ exports[`FXScript Highlighting > should highlight labels, keywords and variables
   {
     "modifiers": undefined,
     "range": Range {
+      "endChar": 16,
+      "endLine": 3,
+      "startChar": 13,
+      "startLine": 3,
+    },
+    "type": "number",
+  },
+  {
+    "modifiers": undefined,
+    "range": Range {
       "endChar": 6,
       "endLine": 4,
       "startChar": 2,
@@ -248,6 +298,16 @@ exports[`FXScript Highlighting > should highlight macros and their arguments 1`]
   {
     "modifiers": undefined,
     "range": Range {
+      "endChar": 13,
+      "endLine": 2,
+      "startChar": 12,
+      "startLine": 2,
+    },
+    "type": "number",
+  },
+  {
+    "modifiers": undefined,
+    "range": Range {
       "endChar": 8,
       "endLine": 4,
       "startChar": 2,
@@ -284,6 +344,113 @@ exports[`FXScript Highlighting > should highlight macros and their arguments 1`]
       "startLine": 6,
     },
     "type": "keyword",
+  },
+  {
+    "modifiers": undefined,
+    "range": Range {
+      "endChar": 11,
+      "endLine": 6,
+      "startChar": 8,
+      "startLine": 6,
+    },
+    "type": "number",
+  },
+]
+`;
+
+exports[`FXScript Highlighting > should highlight various integer bases 1`] = `
+[
+  {
+    "modifiers": [
+      "declaration",
+    ],
+    "range": Range {
+      "endChar": 5,
+      "endLine": 1,
+      "startChar": 0,
+      "startLine": 1,
+    },
+    "type": "function",
+  },
+  {
+    "modifiers": undefined,
+    "range": Range {
+      "endChar": 5,
+      "endLine": 2,
+      "startChar": 2,
+      "startLine": 2,
+    },
+    "type": "keyword",
+  },
+  {
+    "modifiers": undefined,
+    "range": Range {
+      "endChar": 12,
+      "endLine": 2,
+      "startChar": 9,
+      "startLine": 2,
+    },
+    "type": "number",
+  },
+  {
+    "modifiers": undefined,
+    "range": Range {
+      "endChar": 5,
+      "endLine": 3,
+      "startChar": 2,
+      "startLine": 3,
+    },
+    "type": "keyword",
+  },
+  {
+    "modifiers": undefined,
+    "range": Range {
+      "endChar": 14,
+      "endLine": 3,
+      "startChar": 9,
+      "startLine": 3,
+    },
+    "type": "number",
+  },
+  {
+    "modifiers": undefined,
+    "range": Range {
+      "endChar": 5,
+      "endLine": 4,
+      "startChar": 2,
+      "startLine": 4,
+    },
+    "type": "keyword",
+  },
+  {
+    "modifiers": undefined,
+    "range": Range {
+      "endChar": 15,
+      "endLine": 4,
+      "startChar": 9,
+      "startLine": 4,
+    },
+    "type": "number",
+  },
+  {
+    "modifiers": undefined,
+    "range": Range {
+      "endChar": 5,
+      "endLine": 5,
+      "startChar": 2,
+      "startLine": 5,
+    },
+    "type": "keyword",
+  },
+  {
+    "modifiers": undefined,
+    "range": Range {
+      "endChar": 14,
+      "endLine": 5,
+      "startChar": 9,
+      "startLine": 5,
+    },
+    "type": "number",
   },
 ]
 `;

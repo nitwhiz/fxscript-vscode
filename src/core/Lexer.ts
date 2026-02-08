@@ -196,11 +196,32 @@ export class Lexer {
 
   private readNumber(): Token {
     let value = "";
-    if (this.peek() === '0' && this.peek(1) === 'x') {
-      value += this.advance();
-      value += this.advance();
-      while (this.pos < this.input.length && this.isHexDigit(this.peek())) {
-        value += this.advance();
+    const char = this.peek();
+    const next = this.peek(1);
+    
+    if (char === '0') {
+      if (next === 'x' || next === 'X') {
+        value += this.advance(); // 0
+        value += this.advance(); // x
+        while (this.pos < this.input.length && this.isHexDigit(this.peek())) {
+          value += this.advance();
+        }
+      } else if (next === 'b' || next === 'B') {
+        value += this.advance(); // 0
+        value += this.advance(); // b
+        while (this.pos < this.input.length && this.isBinaryDigit(this.peek())) {
+          value += this.advance();
+        }
+      } else if (next === 'c' || next === 'C') {
+        value += this.advance(); // 0
+        value += this.advance(); // c
+        while (this.pos < this.input.length && this.isOctalDigit(this.peek())) {
+          value += this.advance();
+        }
+      } else {
+        while (this.pos < this.input.length && this.isDigit(this.peek())) {
+          value += this.advance();
+        }
       }
     } else {
       while (this.pos < this.input.length && this.isDigit(this.peek())) {
@@ -290,6 +311,14 @@ export class Lexer {
 
   private isDigit(char: string): boolean {
     return char >= '0' && char <= '9';
+  }
+
+  private isBinaryDigit(char: string): boolean {
+    return char === '0' || char === '1';
+  }
+
+  private isOctalDigit(char: string): boolean {
+    return char >= '0' && char <= '7';
   }
 
   private isHexDigit(char: string): boolean {

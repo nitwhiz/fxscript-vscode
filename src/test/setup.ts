@@ -63,7 +63,14 @@ const vscode = {
   SemanticTokensLegend: class {
     constructor(public tokenTypes: string[], public tokenModifiers: string[]) {}
   },
+  EventEmitter: class {
+    event = vi.fn();
+    fire = vi.fn();
+  },
   workspace: {
+    textDocuments: [],
+    onDidChangeTextDocument: vi.fn(() => ({ dispose: vi.fn() })),
+    onDidOpenTextDocument: vi.fn(() => ({ dispose: vi.fn() })),
     createFileSystemWatcher: () => ({
       onDidChange: vi.fn(),
       onDidCreate: vi.fn(),

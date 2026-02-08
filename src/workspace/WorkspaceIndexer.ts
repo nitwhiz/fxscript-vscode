@@ -148,6 +148,11 @@ export class WorkspaceIndexer {
 
         if (!exists) {
             for (const ref of references) {
+                // Numbers don't need definitions
+                if (ref.expectedType === SymbolType.NUMBER) {
+                    continue;
+                }
+
                 const uriString = ref.uri.toString();
                 let diagnostics = diagnosticsByUri.get(uriString) || [];
                 

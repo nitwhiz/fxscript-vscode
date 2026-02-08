@@ -4,7 +4,8 @@ export enum SymbolType {
   VARIABLE,
   CONSTANT,
   LABEL,
-  MACRO
+  MACRO,
+  NUMBER
 }
 
 export interface SymbolDefinition {
