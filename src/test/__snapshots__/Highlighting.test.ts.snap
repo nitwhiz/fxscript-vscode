@@ -27,6 +27,93 @@ exports[`FXScript Highlighting > should highlight @def directive and its value 1
 ]
 `;
 
+exports[`FXScript Highlighting > should highlight array variables and access 1`] = `
+[
+  {
+    "modifiers": [
+      "declaration",
+    ],
+    "range": Range {
+      "endChar": 11,
+      "endLine": 1,
+      "startChar": 4,
+      "startLine": 1,
+    },
+    "type": "variable",
+  },
+  {
+    "modifiers": undefined,
+    "range": Range {
+      "endChar": 15,
+      "endLine": 1,
+      "startChar": 12,
+      "startLine": 1,
+    },
+    "type": "number",
+  },
+  {
+    "modifiers": undefined,
+    "range": Range {
+      "endChar": 3,
+      "endLine": 2,
+      "startChar": 0,
+      "startLine": 2,
+    },
+    "type": "keyword",
+  },
+  {
+    "modifiers": undefined,
+    "range": Range {
+      "endChar": 11,
+      "endLine": 2,
+      "startChar": 4,
+      "startLine": 2,
+    },
+    "type": "variable",
+  },
+  {
+    "modifiers": undefined,
+    "range": Range {
+      "endChar": 13,
+      "endLine": 2,
+      "startChar": 12,
+      "startLine": 2,
+    },
+    "type": "number",
+  },
+  {
+    "modifiers": undefined,
+    "range": Range {
+      "endChar": 18,
+      "endLine": 2,
+      "startChar": 16,
+      "startLine": 2,
+    },
+    "type": "number",
+  },
+  {
+    "modifiers": undefined,
+    "range": Range {
+      "endChar": 12,
+      "endLine": 3,
+      "startChar": 5,
+      "startLine": 3,
+    },
+    "type": "variable",
+  },
+  {
+    "modifiers": undefined,
+    "range": Range {
+      "endChar": 18,
+      "endLine": 3,
+      "startChar": 17,
+      "startLine": 3,
+    },
+    "type": "number",
+  },
+]
+`;
+
 exports[`FXScript Highlighting > should highlight complex labels and expressions 1`] = `
 [
   {

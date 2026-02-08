@@ -161,6 +161,16 @@ Main:
     expect(tokens).toMatchSnapshot();
   });
 
+  it('should highlight array variables and access', async () => {
+    const content = `
+var myTable[100]
+set myTable[0], 42
+eval myTable[i + 1]
+`;
+    const tokens = await getTokens(content);
+    expect(tokens).toMatchSnapshot();
+  });
+
   it('should highlight identifiers in jumpIf conditions', async () => {
     const content = `
 Main:

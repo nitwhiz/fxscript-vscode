@@ -41,7 +41,7 @@ export class CompletionItemProvider implements vscode.CompletionItemProvider {
       // we might want to shrink the range to exclude that character so suggestions work.
       // e.g. "var-" -> we want to suggest after "-"
       const lastChar = word[word.length - 1];
-      const operators = ['-', '+', '*', '/', '>', '<', '=', '(', ')', ','];
+      const operators = ['-', '+', '*', '/', '>', '<', '=', '(', ')', '[', ']', ','];
       if (operators.includes(lastChar) && position.character === wordRange.end.character) {
         // SPECIAL CASE: if it's a hyphen, check if the preceding part looks like a word.
         // If it's 'statHp-', we want to suggest after '-'. 

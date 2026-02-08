@@ -14,6 +14,8 @@ export enum TokenType {
   COLON,
   LPAREN,
   RPAREN,
+  LBRACKET,
+  RBRACKET,
   WHITESPACE,
   NEWLINE,
   EOF,
@@ -110,6 +112,14 @@ export class Lexer {
       return this.consumeToken(TokenType.RPAREN, ")");
     }
 
+    if (char === '[') {
+      return this.consumeToken(TokenType.LBRACKET, "[");
+    }
+
+    if (char === ']') {
+      return this.consumeToken(TokenType.RBRACKET, "]");
+    }
+
     if (this.isDigit(char)) {
       return this.readNumber();
     }
@@ -198,7 +208,7 @@ export class Lexer {
     let value = "";
     const char = this.peek();
     const next = this.peek(1);
-    
+
     if (char === '0') {
       if (next === 'x' || next === 'X') {
         value += this.advance(); // 0

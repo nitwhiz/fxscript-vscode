@@ -227,7 +227,7 @@ export class Parser {
       if (token.type === TokenType.NEWLINE || token.type === TokenType.EOF) {
         break;
       }
-      if (token.type === TokenType.COMMA && parenCount === 0) {
+      if ((token.type === TokenType.COMMA || token.type === TokenType.RBRACKET) && parenCount === 0) {
         break;
       }
 
@@ -317,6 +317,13 @@ export class Parser {
             });
         }
         this.advance();
+
+        if (this.peek().type === TokenType.LBRACKET) {
+            this.advance(); // [
+            this.parseExpression();
+            this.consume(TokenType.RBRACKET);
+        }
+
         lastTokenWasOperator = false;
       } else if (this.isOperator(token.type, token.value)) {
         this.advance();
@@ -387,6 +394,12 @@ export class Parser {
         range: this.tokenToRange(nameToken),
         documentation: this.lastComment
       });
+
+      if (this.peek().type === TokenType.LBRACKET) {
+        this.advance(); // [
+        this.parseExpression();
+        this.consume(TokenType.RBRACKET);
+      }
     }
     this.lastComment = undefined;
   }
