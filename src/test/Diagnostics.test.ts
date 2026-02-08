@@ -190,7 +190,7 @@ Main:
 
   it('should report error for incorrect argument count in custom commands', () => {
     const customCommands = {
-        commands: [{ name: 'myCmd', args: [{ 'arg1': { type: 'identifier' } }, { 'arg2': { type: 'number' } }] }]
+        commands: [{ name: 'myCmd', args: [{ name: 'arg1', type: 'identifier' }, { name: 'arg2', type: 'number' }] }]
     };
     const content = `
 Main:

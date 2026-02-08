@@ -2,12 +2,13 @@ import * as vscode from 'vscode';
 import * as fs from 'fs';
 
 export interface CommandArgument {
+  name: string;
   type: 'identifier' | 'label' | 'number' | 'string';
 }
 
 export interface Command {
   name: string;
-  args?: { [key: string]: CommandArgument }[];
+  args?: CommandArgument[];
 }
 
 export class CommandRegistry {

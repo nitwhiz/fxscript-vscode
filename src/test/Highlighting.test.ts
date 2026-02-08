@@ -132,7 +132,7 @@ endmacro
 
   it('should highlight identifiers used as arguments to custom commands', async () => {
     const customCommands = {
-        commands: [{ name: 'myCmd', args: [{ 'arg1': { type: 'identifier' } }] }]
+        commands: [{ name: 'myCmd', args: [{ name: 'arg1', type: 'identifier' }] }]
     };
     const content = `
 var x

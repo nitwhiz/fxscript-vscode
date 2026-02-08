@@ -213,8 +213,8 @@ export class Parser {
     // Expected type based on command definition
     let expectedSymbolType: SymbolType | undefined;
     if (command && command.args && argIndex !== undefined && argIndex < command.args.length) {
-      const argDef = command.args[argIndex] as any;
-      const argType = Object.values(argDef)[0] ? (Object.values(argDef)[0] as any).type : undefined;
+      const argDef = command.args[argIndex];
+      const argType = argDef.type;
       if (argType === 'label') {
         expectedSymbolType = SymbolType.LABEL;
       } else if (argType === 'identifier') {

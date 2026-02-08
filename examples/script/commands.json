@@ -4,9 +4,8 @@
       "name": "rand",
       "args": [
         {
-          "variable": {
-            "type": "identifier"
-          }
+          "name": "variable",
+          "type": "identifier"
         }
       ]
     },
@@ -14,9 +13,8 @@
       "name": "accuracyCheck",
       "args": [
         {
-          "missedJumpPc": {
-            "type": "label"
-          }
+          "name": "missedJumpPc",
+          "type": "label"
         }
       ]
     },
@@ -31,6 +29,15 @@
     },
     {
       "name": "hpUpdate"
+    },
+    {
+      "name": "eval",
+      "args": [
+        {
+          "name": "expr",
+          "type": "identifier"
+        }
+      ]
     }
   ],
   "identifiers": [
