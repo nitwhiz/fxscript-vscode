@@ -1,5 +1,32 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
+exports[`FXScript Highlighting > should highlight @def directive and its value 1`] = `
+[
+  {
+    "modifiers": undefined,
+    "range": Range {
+      "endChar": 4,
+      "endLine": 1,
+      "startChar": 0,
+      "startLine": 1,
+    },
+    "type": "keyword",
+  },
+  {
+    "modifiers": [
+      "declaration",
+    ],
+    "range": Range {
+      "endChar": 19,
+      "endLine": 1,
+      "startChar": 5,
+      "startLine": 1,
+    },
+    "type": "variable",
+  },
+]
+`;
+
 exports[`FXScript Highlighting > should highlight complex labels and expressions 1`] = `
 [
   {
@@ -158,6 +185,265 @@ exports[`FXScript Highlighting > should highlight custom commands 1`] = `
 ]
 `;
 
+exports[`FXScript Highlighting > should highlight identifiers in jumpIf conditions 1`] = `
+[
+  {
+    "modifiers": [
+      "declaration",
+    ],
+    "range": Range {
+      "endChar": 5,
+      "endLine": 1,
+      "startChar": 0,
+      "startLine": 1,
+    },
+    "type": "function",
+  },
+  {
+    "modifiers": undefined,
+    "range": Range {
+      "endChar": 8,
+      "endLine": 2,
+      "startChar": 2,
+      "startLine": 2,
+    },
+    "type": "keyword",
+  },
+  {
+    "modifiers": undefined,
+    "range": Range {
+      "endChar": 30,
+      "endLine": 2,
+      "startChar": 26,
+      "startLine": 2,
+    },
+    "type": "function",
+  },
+]
+`;
+
+exports[`FXScript Highlighting > should highlight identifiers in various contexts 1`] = `
+[
+  {
+    "modifiers": undefined,
+    "range": Range {
+      "endChar": 4,
+      "endLine": 1,
+      "startChar": 0,
+      "startLine": 1,
+    },
+    "type": "keyword",
+  },
+  {
+    "modifiers": [
+      "declaration",
+    ],
+    "range": Range {
+      "endChar": 16,
+      "endLine": 1,
+      "startChar": 5,
+      "startLine": 1,
+    },
+    "type": "variable",
+  },
+  {
+    "modifiers": [
+      "declaration",
+    ],
+    "range": Range {
+      "endChar": 9,
+      "endLine": 2,
+      "startChar": 4,
+      "startLine": 2,
+    },
+    "type": "variable",
+  },
+  {
+    "modifiers": [
+      "declaration",
+    ],
+    "range": Range {
+      "endChar": 5,
+      "endLine": 3,
+      "startChar": 0,
+      "startLine": 3,
+    },
+    "type": "function",
+  },
+  {
+    "modifiers": [
+      "declaration",
+    ],
+    "range": Range {
+      "endChar": 7,
+      "endLine": 5,
+      "startChar": 0,
+      "startLine": 5,
+    },
+    "type": "function",
+  },
+  {
+    "modifiers": undefined,
+    "range": Range {
+      "endChar": 5,
+      "endLine": 4,
+      "startChar": 2,
+      "startLine": 4,
+    },
+    "type": "keyword",
+  },
+  {
+    "modifiers": undefined,
+    "range": Range {
+      "endChar": 11,
+      "endLine": 4,
+      "startChar": 6,
+      "startLine": 4,
+    },
+    "type": "variable",
+  },
+  {
+    "modifiers": undefined,
+    "range": Range {
+      "endChar": 25,
+      "endLine": 4,
+      "startChar": 24,
+      "startLine": 4,
+    },
+    "type": "number",
+  },
+  {
+    "modifiers": undefined,
+    "range": Range {
+      "endChar": 5,
+      "endLine": 6,
+      "startChar": 2,
+      "startLine": 6,
+    },
+    "type": "keyword",
+  },
+  {
+    "modifiers": undefined,
+    "range": Range {
+      "endChar": 11,
+      "endLine": 6,
+      "startChar": 6,
+      "startLine": 6,
+    },
+    "type": "variable",
+  },
+  {
+    "modifiers": undefined,
+    "range": Range {
+      "endChar": 18,
+      "endLine": 6,
+      "startChar": 13,
+      "startLine": 6,
+    },
+    "type": "variable",
+  },
+  {
+    "modifiers": undefined,
+    "range": Range {
+      "endChar": 22,
+      "endLine": 6,
+      "startChar": 21,
+      "startLine": 6,
+    },
+    "type": "number",
+  },
+  {
+    "modifiers": undefined,
+    "range": Range {
+      "endChar": 8,
+      "endLine": 7,
+      "startChar": 2,
+      "startLine": 7,
+    },
+    "type": "keyword",
+  },
+  {
+    "modifiers": undefined,
+    "range": Range {
+      "endChar": 14,
+      "endLine": 7,
+      "startChar": 9,
+      "startLine": 7,
+    },
+    "type": "variable",
+  },
+  {
+    "modifiers": undefined,
+    "range": Range {
+      "endChar": 18,
+      "endLine": 7,
+      "startChar": 17,
+      "startLine": 7,
+    },
+    "type": "number",
+  },
+  {
+    "modifiers": undefined,
+    "range": Range {
+      "endChar": 26,
+      "endLine": 7,
+      "startChar": 20,
+      "startLine": 7,
+    },
+    "type": "function",
+  },
+]
+`;
+
+exports[`FXScript Highlighting > should highlight identifiers used as arguments to custom commands 1`] = `
+[
+  {
+    "modifiers": [
+      "declaration",
+    ],
+    "range": Range {
+      "endChar": 5,
+      "endLine": 1,
+      "startChar": 4,
+      "startLine": 1,
+    },
+    "type": "variable",
+  },
+  {
+    "modifiers": [
+      "declaration",
+    ],
+    "range": Range {
+      "endChar": 5,
+      "endLine": 2,
+      "startChar": 0,
+      "startLine": 2,
+    },
+    "type": "function",
+  },
+  {
+    "modifiers": undefined,
+    "range": Range {
+      "endChar": 7,
+      "endLine": 3,
+      "startChar": 2,
+      "startLine": 3,
+    },
+    "type": "keyword",
+  },
+  {
+    "modifiers": undefined,
+    "range": Range {
+      "endChar": 9,
+      "endLine": 3,
+      "startChar": 8,
+      "startLine": 3,
+    },
+    "type": "variable",
+  },
+]
+`;
+
 exports[`FXScript Highlighting > should highlight labels, keywords and variables 1`] = `
 [
   {
@@ -233,6 +519,77 @@ exports[`FXScript Highlighting > should highlight labels, keywords and variables
       "startLine": 4,
     },
     "type": "function",
+  },
+]
+`;
+
+exports[`FXScript Highlighting > should highlight macro arguments inside macro 1`] = `
+[
+  {
+    "modifiers": [
+      "declaration",
+    ],
+    "range": Range {
+      "endChar": 13,
+      "endLine": 1,
+      "startChar": 6,
+      "startLine": 1,
+    },
+    "type": "keyword",
+  },
+  {
+    "modifiers": [
+      "declaration",
+    ],
+    "range": Range {
+      "endChar": 19,
+      "endLine": 1,
+      "startChar": 14,
+      "startLine": 1,
+    },
+    "type": "variable",
+  },
+  {
+    "modifiers": [
+      "declaration",
+    ],
+    "range": Range {
+      "endChar": 26,
+      "endLine": 1,
+      "startChar": 21,
+      "startLine": 1,
+    },
+    "type": "variable",
+  },
+  {
+    "modifiers": undefined,
+    "range": Range {
+      "endChar": 5,
+      "endLine": 2,
+      "startChar": 2,
+      "startLine": 2,
+    },
+    "type": "keyword",
+  },
+  {
+    "modifiers": undefined,
+    "range": Range {
+      "endChar": 11,
+      "endLine": 2,
+      "startChar": 6,
+      "startLine": 2,
+    },
+    "type": "variable",
+  },
+  {
+    "modifiers": undefined,
+    "range": Range {
+      "endChar": 18,
+      "endLine": 2,
+      "startChar": 13,
+      "startLine": 2,
+    },
+    "type": "variable",
   },
 ]
 `;
@@ -358,6 +715,73 @@ exports[`FXScript Highlighting > should highlight macros and their arguments 1`]
 ]
 `;
 
+exports[`FXScript Highlighting > should highlight nested expressions correctly 1`] = `
+[
+  {
+    "modifiers": [
+      "declaration",
+    ],
+    "range": Range {
+      "endChar": 5,
+      "endLine": 1,
+      "startChar": 0,
+      "startLine": 1,
+    },
+    "type": "function",
+  },
+  {
+    "modifiers": undefined,
+    "range": Range {
+      "endChar": 5,
+      "endLine": 2,
+      "startChar": 2,
+      "startLine": 2,
+    },
+    "type": "keyword",
+  },
+  {
+    "modifiers": undefined,
+    "range": Range {
+      "endChar": 11,
+      "endLine": 2,
+      "startChar": 10,
+      "startLine": 2,
+    },
+    "type": "number",
+  },
+  {
+    "modifiers": undefined,
+    "range": Range {
+      "endChar": 16,
+      "endLine": 2,
+      "startChar": 15,
+      "startLine": 2,
+    },
+    "type": "number",
+  },
+  {
+    "modifiers": undefined,
+    "range": Range {
+      "endChar": 21,
+      "endLine": 2,
+      "startChar": 20,
+      "startLine": 2,
+    },
+    "type": "number",
+  },
+  {
+    "modifiers": undefined,
+    "range": Range {
+      "endChar": 25,
+      "endLine": 2,
+      "startChar": 24,
+      "startLine": 2,
+    },
+    "type": "number",
+  },
+]
+`;
+
 exports[`FXScript Highlighting > should highlight various integer bases 1`] = `
 [
   {
@@ -449,6 +873,31 @@ exports[`FXScript Highlighting > should highlight various integer bases 1`] = `
       "endLine": 5,
       "startChar": 9,
       "startLine": 5,
+    },
+    "type": "number",
+  },
+]
+`;
+
+exports[`FXScript Highlighting > should highlight various operators as keywords if they are at start of line (rare but possible in some grammars) 1`] = `
+[
+  {
+    "modifiers": undefined,
+    "range": Range {
+      "endChar": 3,
+      "endLine": 1,
+      "startChar": 2,
+      "startLine": 1,
+    },
+    "type": "number",
+  },
+  {
+    "modifiers": undefined,
+    "range": Range {
+      "endChar": 6,
+      "endLine": 1,
+      "startChar": 5,
+      "startLine": 1,
     },
     "type": "number",
   },

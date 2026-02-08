@@ -97,4 +97,76 @@ Main:
     const tokens = await getTokens(content);
     expect(tokens).toMatchSnapshot();
   });
+
+  it('should highlight identifiers in various contexts', async () => {
+    const content = `
+@def MY_CONST 42
+var myVar
+Main:
+  set myVar, MY_CONST + 1
+%local:
+  set myVar, myVar * 2
+  jumpIf myVar > 0, %local
+`;
+    const tokens = await getTokens(content);
+    expect(tokens).toMatchSnapshot();
+  });
+
+  it('should highlight macro arguments inside macro', async () => {
+    const content = `
+macro MyMacro $arg1, $arg2
+  set $arg1, $arg2
+endmacro
+`;
+    const tokens = await getTokens(content);
+    expect(tokens).toMatchSnapshot();
+  });
+
+  it('should highlight @def directive and its value', async () => {
+    const content = `
+@def SOME_VALUE 100
+`;
+    const tokens = await getTokens(content);
+    expect(tokens).toMatchSnapshot();
+  });
+
+  it('should highlight identifiers used as arguments to custom commands', async () => {
+    const customCommands = {
+        commands: [{ name: 'myCmd', args: [{ 'arg1': { type: 'identifier' } }] }]
+    };
+    const content = `
+var x
+Main:
+  myCmd x
+`;
+    const tokens = await getTokens(content, customCommands);
+    expect(tokens).toMatchSnapshot();
+  });
+
+  it('should highlight various operators as keywords if they are at start of line (rare but possible in some grammars)', async () => {
+     // Testing how the parser handles weird start of lines
+     const content = `
++ 1, 2
+`;
+     const tokens = await getTokens(content);
+     expect(tokens).toMatchSnapshot();
+  });
+
+  it('should highlight nested expressions correctly', async () => {
+    const content = `
+Main:
+  set a, (1 + (2 * (3 / 4)))
+`;
+    const tokens = await getTokens(content);
+    expect(tokens).toMatchSnapshot();
+  });
+
+  it('should highlight identifiers in jumpIf conditions', async () => {
+    const content = `
+Main:
+  jumpIf a > b && c == d, Main
+`;
+    const tokens = await getTokens(content);
+    expect(tokens).toMatchSnapshot();
+  });
 });
