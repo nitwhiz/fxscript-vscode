@@ -174,7 +174,7 @@ eval myTable[i + 1]
   it('should highlight identifiers in jumpIf conditions', async () => {
     const content = `
 Main:
-  jumpIf a > b && c == d, Main
+  jumpIf a > b & c == d, Main
 `;
     const tokens = await getTokens(content);
     expect(tokens).toMatchSnapshot();

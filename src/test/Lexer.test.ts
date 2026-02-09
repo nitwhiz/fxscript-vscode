@@ -24,6 +24,25 @@ describe('FXScript Lexer', () => {
     ]);
   });
 
+  it('should tokenize multi-character operators', () => {
+    const content = '<< >> == != <= >=';
+    const lexer = new Lexer(content);
+    const tokens = lexer.tokenize();
+
+    const values = tokens.filter(t => t.type !== TokenType.EOF).map(t => t.value);
+    expect(values).toEqual(['<<', '>>', '==', '!=', '<=', '>=']);
+  });
+
+  it('should NOT tokenize invalid multi-character operators', () => {
+    const content = '&& || &= |= ^=';
+    const lexer = new Lexer(content);
+    const tokens = lexer.tokenize();
+
+    const values = tokens.filter(t => t.type !== TokenType.EOF).map(t => t.value);
+    // These should now be tokenized as separate operators
+    expect(values).toEqual(['&', '&', '|', '|', '&', '=', '|', '=', '^', '=']);
+  });
+
   it('should tokenize labels and local labels', () => {
     const content = 'Main: %_local %local: label-with-hyphen: %local-with-hyphen:';
     const lexer = new Lexer(content);

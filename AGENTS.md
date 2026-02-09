@@ -176,5 +176,8 @@ By separating the `core` logic from the `vscode` API, we achieve:
 - **LSP Readiness**: If we decide to move to a full LSP later, the `core` and `workspace` logic can be easily moved to the server process.
 - **Maintainability**: Changes to the FXScript language (new operators, macro syntax) only affect the `core` module, while VSCode-specific bugs only affect the `vscode` module.
 
+#### Testing
+- Always run tests with `npm test` before submitting changes. Unit tests are located in `src/test/` and use the Vitest framework.
+
 #### Constraint
 - Never modify files in the `examples/` directory.

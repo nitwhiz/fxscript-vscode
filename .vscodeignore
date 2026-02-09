@@ -2,6 +2,7 @@
 .idea/**
 .junie/**
 src/**
+out/test/**
 tsconfig.json
 .output.txt
 pnpm-lock.yaml

@@ -299,9 +299,9 @@ exports[`FXScript Highlighting > should highlight identifiers in jumpIf conditio
   {
     "modifiers": undefined,
     "range": Range {
-      "endChar": 30,
+      "endChar": 29,
       "endLine": 2,
-      "startChar": 26,
+      "startChar": 25,
       "startLine": 2,
     },
     "type": "function",

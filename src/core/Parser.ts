@@ -146,6 +146,7 @@ export class Parser {
     }
 
     while (this.pos < this.tokens.length) {
+      const currentTokenPos = this.pos;
       const token = this.peek();
       if (token.type === TokenType.NEWLINE || token.type === TokenType.EOF) {
         break;
@@ -160,6 +161,10 @@ export class Parser {
       }
 
       this.parseExpression(command, argIndex);
+
+      if (this.pos === currentTokenPos) {
+          this.advance(); // Safety break to avoid infinite loop
+      }
     }
 
     const actualArgCount = hasArgs ? argIndex + 1 : 0;
@@ -196,7 +201,7 @@ export class Parser {
         return true;
     }
     if (type === TokenType.IDENTIFIER || type === TokenType.LABEL || type === TokenType.LOCAL_LABEL) {
-        const ops = ["+", "-", "*", "/", "%", "&", "|", "^", "~", "<<", ">>", "==", "!=", "<", ">", "<=", ">=", "!", "&&", "||"];
+        const ops = ["+", "-", "*", "/", "%", "&", "|", "^", "~", "<<", ">>", "==", "!=", "<", ">", "<=", ">=", "!"];
         if (value && ops.includes(value)) {
             return true;
         }
@@ -208,6 +213,7 @@ export class Parser {
     // Basic expression parser that consumes tokens until a comma or newline/EOF
     // and records references
     let parenCount = 0;
+    let bracketCount = 0;
     let lastTokenWasOperator = true; // Start as true to allow unary operators at the beginning
 
     // Expected type based on command definition
@@ -227,7 +233,10 @@ export class Parser {
       if (token.type === TokenType.NEWLINE || token.type === TokenType.EOF) {
         break;
       }
-      if ((token.type === TokenType.COMMA || token.type === TokenType.RBRACKET) && parenCount === 0) {
+      if (token.type === TokenType.COMMA && parenCount === 0 && bracketCount === 0) {
+        break;
+      }
+      if (token.type === TokenType.RBRACKET && parenCount === 0 && bracketCount === 0) {
         break;
       }
 
@@ -252,6 +261,27 @@ export class Parser {
             vscode.DiagnosticSeverity.Error
           ));
           parenCount = 0;
+        }
+        this.advance();
+        lastTokenWasOperator = false;
+      } else if (token.type === TokenType.LBRACKET) {
+        bracketCount++;
+        this.advance();
+        lastTokenWasOperator = true;
+      } else if (token.type === TokenType.RBRACKET) {
+        bracketCount--;
+        if (bracketCount < 0) {
+          // This might be the end of an array access in a parent call
+          // If we're at the top level of this call, we should break (already handled above)
+          // But if we're here, it means parenCount > 0 or something else is weird.
+          // Actually, the check at line 235 should have caught it if it was top-level.
+          // If it's negative here, it's definitely an error in this context.
+          this.diagnostics.push(new vscode.Diagnostic(
+            this.tokenToRange(token),
+            `Unexpected closing bracket`,
+            vscode.DiagnosticSeverity.Error
+          ));
+          bracketCount = 0;
         }
         this.advance();
         lastTokenWasOperator = false;
@@ -317,12 +347,6 @@ export class Parser {
             });
         }
         this.advance();
-
-        if (this.peek().type === TokenType.LBRACKET) {
-            this.advance(); // [
-            this.parseExpression();
-            this.consume(TokenType.RBRACKET);
-        }
 
         lastTokenWasOperator = false;
       } else if (this.isOperator(token.type, token.value)) {
@@ -395,10 +419,9 @@ export class Parser {
         documentation: this.lastComment
       });
 
-      if (this.peek().type === TokenType.LBRACKET) {
-        this.advance(); // [
+      // If there's more on the line, it's an assignment or a complex declaration
+      while (this.pos < this.tokens.length && this.peek().type !== TokenType.NEWLINE && this.peek().type !== TokenType.EOF) {
         this.parseExpression();
-        this.consume(TokenType.RBRACKET);
       }
     }
     this.lastComment = undefined;
@@ -416,7 +439,9 @@ export class Parser {
         documentation: this.lastComment
       });
       // Parse the expression to find references
-      this.parseExpression();
+      while (this.pos < this.tokens.length && this.peek().type !== TokenType.NEWLINE && this.peek().type !== TokenType.EOF) {
+        this.parseExpression();
+      }
     }
     this.lastComment = undefined;
   }
