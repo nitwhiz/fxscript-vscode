@@ -130,6 +130,17 @@ Main:
     expect(diagnostics[0].message).toContain("Incomplete expression");
   });
 
+  it('should report error for var with initial value', () => {
+    const content = `
+var something 33
+var expression A + 33 - 4
+`;
+    const diagnostics = getDiagnostics(content);
+    expect(diagnostics.length).toBe(2);
+    expect(diagnostics[0].message).toBe("var declaration cannot have an initial value");
+    expect(diagnostics[1].message).toBe("var declaration cannot have an initial value");
+  });
+
   it('should NOT report errors for valid code', () => {
     const content = `
 @def CONST 100

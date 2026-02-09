@@ -419,9 +419,24 @@ export class Parser {
         documentation: this.lastComment
       });
 
-      // If there's more on the line, it's an assignment or a complex declaration
-      while (this.pos < this.tokens.length && this.peek().type !== TokenType.NEWLINE && this.peek().type !== TokenType.EOF) {
+      // If it's an array declaration, parse the bracketed size
+      if (this.pos < this.tokens.length && this.peek().type === TokenType.LBRACKET) {
+        this.advance(); // [
         this.parseExpression();
+        this.consume(TokenType.RBRACKET);
+      }
+
+      // var cannot have a value in their declaration.
+      if (this.pos < this.tokens.length && this.peek().type !== TokenType.NEWLINE && this.peek().type !== TokenType.EOF) {
+          this.diagnostics.push(new vscode.Diagnostic(
+              this.tokenToRange(this.peek()),
+              `var declaration cannot have an initial value`,
+              vscode.DiagnosticSeverity.Error
+          ));
+          // Consume the rest of the line to avoid further errors
+          while (this.pos < this.tokens.length && this.peek().type !== TokenType.NEWLINE && this.peek().type !== TokenType.EOF) {
+            this.advance();
+          }
       }
     }
     this.lastComment = undefined;
