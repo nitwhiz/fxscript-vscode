@@ -7,6 +7,9 @@
       "include": "#comments"
     },
     {
+      "include": "#line-continuations"
+    },
+    {
       "include": "#directives"
     },
     {
@@ -31,6 +34,14 @@
         {
           "name": "comment.line.number-sign.fx",
           "match": "#.*$"
+        }
+      ]
+    },
+    "line-continuations": {
+      "patterns": [
+        {
+          "name": "constant.character.escape.fx",
+          "match": "\\\\(\\s*|\\s*#.*)$"
         }
       ]
     },

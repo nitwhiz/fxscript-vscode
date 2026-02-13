@@ -179,4 +179,18 @@ Main:
     const tokens = await getTokens(content);
     expect(tokens).toMatchSnapshot();
   });
+
+  it('should support escaped newlines (line continuation)', async () => {
+    const content = `
+Main:
+  set a, \\
+      123
+  set b, \\ # comment
+      456
+`;
+    const tokens = await getTokens(content);
+    // 123 should be on the same logical line as 'set a,'
+    // 456 should be on the same logical line as 'set b,'
+    expect(tokens).toMatchSnapshot();
+  });
 });

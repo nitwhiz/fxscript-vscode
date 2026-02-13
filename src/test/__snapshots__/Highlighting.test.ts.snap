@@ -990,3 +990,60 @@ exports[`FXScript Highlighting > should highlight various operators as keywords 
   },
 ]
 `;
+
+exports[`FXScript Highlighting > should support escaped newlines (line continuation) 1`] = `
+[
+  {
+    "modifiers": [
+      "declaration",
+    ],
+    "range": Range {
+      "endChar": 5,
+      "endLine": 1,
+      "startChar": 0,
+      "startLine": 1,
+    },
+    "type": "function",
+  },
+  {
+    "modifiers": undefined,
+    "range": Range {
+      "endChar": 5,
+      "endLine": 2,
+      "startChar": 2,
+      "startLine": 2,
+    },
+    "type": "keyword",
+  },
+  {
+    "modifiers": undefined,
+    "range": Range {
+      "endChar": 9,
+      "endLine": 3,
+      "startChar": 6,
+      "startLine": 3,
+    },
+    "type": "number",
+  },
+  {
+    "modifiers": undefined,
+    "range": Range {
+      "endChar": 5,
+      "endLine": 4,
+      "startChar": 2,
+      "startLine": 4,
+    },
+    "type": "keyword",
+  },
+  {
+    "modifiers": undefined,
+    "range": Range {
+      "endChar": 9,
+      "endLine": 5,
+      "startChar": 6,
+      "startLine": 5,
+    },
+    "type": "number",
+  },
+]
+`;

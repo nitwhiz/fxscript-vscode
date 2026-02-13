@@ -61,6 +61,25 @@ export class Lexer {
 
     const char = this.peek();
 
+    if (char === '\\') {
+      this.advance();
+      this.skipWhitespace();
+      if (this.peek() === '\n') {
+        this.advance();
+        return this.nextToken();
+      } else if (this.peek() === '#') {
+        // Read and ignore the comment
+        while (this.pos < this.input.length && this.peek() !== '\n') {
+          this.advance();
+        }
+        if (this.peek() === '\n') {
+          this.advance();
+        }
+        return this.nextToken();
+      }
+      return this.createToken(TokenType.UNKNOWN, "\\");
+    }
+
     if (char === '\n') {
       this.advance();
       return this.createToken(TokenType.NEWLINE, "\n");

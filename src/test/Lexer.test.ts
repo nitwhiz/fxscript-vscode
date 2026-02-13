@@ -81,13 +81,13 @@ describe('FXScript Lexer', () => {
     const lexer = new Lexer(content);
     const tokens = lexer.tokenize();
 
-    expect(tokens[0].type).toBe(TokenType.IDENTIFIER); 
+    expect(tokens[0].type).toBe(TokenType.IDENTIFIER);
     expect(tokens[0].value).toBe('a-b'); // Now allowed in references
-    
+
     expect(tokens[1].type).toBe(TokenType.IDENTIFIER); // a
     expect(tokens[2].type).toBe(TokenType.OPERATOR);   // -
     expect(tokens[3].type).toBe(TokenType.IDENTIFIER); // b
-    
+
     expect(tokens[4].type).toBe(TokenType.LABEL);      // label-def:
     expect(tokens[4].value).toBe('label-def:');
 
@@ -134,5 +134,33 @@ describe('FXScript Lexer', () => {
     const directives = tokens.filter(t => t.type === TokenType.DIRECTIVE);
     expect(directives[0].value).toBe('@defmyConst');
     expect(directives[1].value).toBe('@include"file"');
+  });
+
+  it('should handle escaped newlines', () => {
+    const content = 'set a, \\\n  123';
+    const lexer = new Lexer(content);
+    const tokens = lexer.tokenize();
+
+    const types = tokens.filter(t => t.type !== TokenType.EOF).map(t => t.type);
+    expect(types).toEqual([
+      TokenType.KEYWORD,    // set
+      TokenType.IDENTIFIER, // a
+      TokenType.COMMA,      // ,
+      TokenType.NUMBER,     // 123
+    ]);
+  });
+
+  it('should handle escaped newlines with comments', () => {
+    const content = 'set a, \\ # some comment\n  123';
+    const lexer = new Lexer(content);
+    const tokens = lexer.tokenize();
+
+    const types = tokens.filter(t => t.type !== TokenType.EOF).map(t => t.type);
+    expect(types).toEqual([
+      TokenType.KEYWORD,    // set
+      TokenType.IDENTIFIER, // a
+      TokenType.COMMA,      // ,
+      TokenType.NUMBER,     // 123
+    ]);
   });
 });
